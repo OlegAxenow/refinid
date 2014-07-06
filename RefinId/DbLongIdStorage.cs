@@ -11,8 +11,12 @@ namespace RefinId
 	/// <remarks>By default, expects table _longIds(id as long).</remarks>
 	public class DbLongIdStorage : ILongIdStorage
 	{
+		public const string DefaultTableName = "_longIds";
+		public const string DefaultProviderName = "System.Data.SqlClient";
+		public const string IdColumnName = "id";
+		public const string TypeColumnName = "typeid";
+
 		private readonly string _connectionString;
-		private readonly string _providerName;
 		private readonly string _tableName;
 		private readonly DbProviderFactory _factory;
 
@@ -20,20 +24,24 @@ namespace RefinId
 		/// Initializes instance with specified parameters and checks <see cref="DbProviderFactory"/>
 		/// creation for <paramref name="providerName"/>.
 		/// </summary>
-		/// <param name="connectionString">Valid connection string to access to database.</param>
-		/// <param name="providerName">Provider name to instantiate <see cref="DbProviderFactory"/>.
+		/// <param name="connectionString"> Valid connection string to access to database.</param>
+		/// <param name="providerName"> Provider name to instantiate <see cref="DbProviderFactory"/>.
 		/// You can get it from config file (&lt;connectionStrings&gt; element).</param>
-		/// <param name="tableName">Name of the table with last identifiers values.</param>
+		/// <param name="tableName"> Name of the table with last identifiers values.
+		/// This table should contains (typeid, id) columns with <see cref="short"/> and <see cref="long"/> types respectively. 
+		/// "typeid" column is redundant, but needed because of limited <see cref="DbProviderFactory"/> API.</param>
+		/// <param name="removeUnusedRows"> Whether to remove absent entries inside <see cref="SaveLastValues"/>.</param>
 		public DbLongIdStorage(string connectionString,
-			string providerName = "System.Data.SqlClient",
-			string tableName = "_longIds")
+			string providerName = DefaultProviderName,
+			string tableName = DefaultTableName,
+			bool removeUnusedRows = true)
 		{
 			if (connectionString == null) throw new ArgumentNullException("connectionString");
 			if (providerName == null) throw new ArgumentNullException("providerName");
 			if (tableName == null) throw new ArgumentNullException("tableName");
 
 			_connectionString = connectionString;
-			_providerName = providerName;
+			RemoveUnusedRows = removeUnusedRows;
 
 			_factory = DbProviderFactories.GetFactory(providerName);
 			if (_factory == null)
@@ -54,18 +62,35 @@ namespace RefinId
 				OnBeforeLoadValues(connection);
 				using (var command = connection.CreateCommand())
 				{
-					command.CommandText = "select id from " + _tableName;
+					command.CommandText = GetSelectCommandText();
 					command.CommandType = CommandType.Text;
 
 					using (var reader = command.ExecuteReader())
 					{
 						while (reader.Read())
-							result.Add(reader.GetInt64(0));
+						{
+							const int idOrdinal = 1;
+							const int typeOrdinal = 0;
+
+							var id = (LongId)reader.GetInt64(idOrdinal);
+							if (reader.GetInt16(typeOrdinal) != id.Type)
+								throw new InvalidOperationException(
+									string.Format("Type for id {0} should be {1} but equals to {2}.",
+									id, id.Type, reader.GetInt16(typeOrdinal)));
+
+							result.Add(id);
+						}
 					}
 				}
 			}
 
 			return result;
+		}
+
+		private string GetSelectCommandText()
+		{
+			return "select " + TypeColumnName + "," + IdColumnName +
+			       " from " + _tableName;
 		}
 
 		public void SaveLastValues(IEnumerable<long> values)
@@ -75,47 +100,100 @@ namespace RefinId
 				OnBeforeSaveValues(connection);
 				using (var command = connection.CreateCommand())
 				{
-					command.CommandType = CommandType.Text;
+					SaveToDatabase(values, command);
+				}
+			}
+		}
 
-					command.CommandText = "DELETE FROM " + _tableName;
-					command.ExecuteNonQuery();
+		private void SaveToDatabase(IEnumerable<long> values, DbCommand command)
+		{
+			var builder = InitializeCommandBuilderAndAdapter(command);
 
-					// TODO: may be use DataSet + DataAdapter as more universal approach (no hard-coded provider-specific parameter placeholders etc.)
+			var dataSet = new DataSet();
+			builder.DataAdapter.Fill(dataSet);
+			var table = dataSet.Tables[0];
 
-					var parameter = command.CreateParameter();
-					command.Parameters.Add(parameter);
-					
-					command.CommandText = "INSERT INTO " + _tableName + "(id) VALUES("
-						+ GetParameterPlaceholder(parameter, "id") + ")";
+			PrepareChanges(table, values);
 
-					command.Prepare();
-					foreach (long value in values)
+			
+			builder.DataAdapter.InsertCommand = builder.GetInsertCommand();
+			builder.DataAdapter.UpdateCommand = builder.GetUpdateCommand();
+			builder.DataAdapter.DeleteCommand = builder.GetDeleteCommand();
+
+			builder.DataAdapter.Update(dataSet);
+		}
+
+		private void PrepareChanges(DataTable table, IEnumerable<long> values)
+		{
+			var tableIdMapByType = CreateMapByType(table);
+			// HashSet to detect non-unique values
+			var uniqueValueTypes = new HashSet<short>();
+
+			foreach (LongId id in values)
+			{
+				uniqueValueTypes.Add(id.Type);
+				DataRow row;
+				if (tableIdMapByType.TryGetValue(id.Type, out row))
+				{
+					if (RemoveUnusedRows)
 					{
-						parameter.Value = value;
-						command.ExecuteNonQuery();
+						// remove map entry to detect deleted rows
+						tableIdMapByType.Remove(id.Type);
+					}
+				}
+				else
+				{
+					row = table.NewRow();
+					table.Rows.Add(row);
+					row[TypeColumnName] = id.Type;
+				}
+				row[IdColumnName] = id.Value;
+			}
+
+			if (RemoveUnusedRows)
+			{
+				for (int i = table.Rows.Count - 1; i >= 0; i--)
+				{
+					var row = table.Rows[i];
+					// if "typeid" will be removed, we can use:  ((LongId)Convert.ToInt64(row[IdColumnName])).Type;
+					if (tableIdMapByType.ContainsKey(Convert.ToInt16(row[TypeColumnName])))
+					{
+						row.Delete();
 					}
 				}
 			}
-
-			throw new NotImplementedException();
 		}
 
-		private string GetParameterPlaceholder(DbParameter parameter, string pureName)
+		private static Dictionary<short, DataRow> CreateMapByType(DataTable table)
 		{
-			string placeholder;
-
-			switch (_providerName)
+			var tableIdMapByType = new Dictionary<short, DataRow>(table.Rows.Count);
+			foreach (DataRow row in table.Rows)
 			{
-				case "System.Data.SqlClient":
-					placeholder ="@" + pureName;
-					parameter.ParameterName = placeholder;
-					break;
-				default:
-					throw new NotSupportedException(
-						string.Format("{0} database provider does not supported.", _providerName));
+				LongId id = Convert.ToInt64(row[IdColumnName]);
+				tableIdMapByType.Add(id.Type, row);
 			}
-			throw new NotImplementedException();
-			
+			return tableIdMapByType;
+		}
+
+		public bool RemoveUnusedRows { get; private set; }
+
+		private DbCommandBuilder InitializeCommandBuilderAndAdapter(DbCommand command)
+		{
+			command.CommandType = CommandType.Text;
+			command.CommandText = GetSelectCommandText();
+
+			var builder = _factory.CreateCommandBuilder();
+			if (builder == null)
+				throw new InvalidOperationException(
+					string.Format("Factory {0} does not support command builders.", _factory.GetType().Name));
+
+			builder.DataAdapter = _factory.CreateDataAdapter();
+			if (builder.DataAdapter == null)
+				throw new InvalidOperationException(
+					string.Format("Factory {0} does not support data adapters.", _factory.GetType().Name));
+
+			builder.DataAdapter.SelectCommand = command;
+			return builder;
 		}
 
 		/// <summary>

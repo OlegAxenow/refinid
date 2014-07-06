@@ -9,7 +9,7 @@
 		/// Creates new unique sequential <see cref="LongId"/> with <see cref="LongId.Type"/>, 
 		/// specified by <paramref name="type"/>.
 		/// </summary>
-		long Create(ushort type);
+		long Create(short type);
 
 		/// <summary>
 		/// Flushes current state (last created identifiers) to storage.

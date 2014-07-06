@@ -41,8 +41,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DbCommandExtensions.cs" />
+    <Compile Include="DbLongIdStorageSpec.cs" />
     <Compile Include="DefaultLongIdFactorySpec.cs" />
     <Compile Include="LongIdSpec.cs" />
     <Compile Include="MultiThreadTestRunner.cs" />
