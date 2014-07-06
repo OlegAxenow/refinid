@@ -95,6 +95,8 @@ namespace RefinId
 
 		public void SaveLastValues(IEnumerable<long> values)
 		{
+			if (values == null) throw new ArgumentNullException("values");
+
 			using (var connection = OpenConnection())
 			{
 				OnBeforeSaveValues(connection);
@@ -131,7 +133,13 @@ namespace RefinId
 
 			foreach (LongId id in values)
 			{
-				uniqueValueTypes.Add(id.Type);
+				if (!uniqueValueTypes.Add(id.Type))
+				{
+					throw new ArgumentException(
+						string.Format("Duplicated type {0} for id {1}.", id.Type, id),
+						"values");
+				}
+
 				DataRow row;
 				if (tableIdMapByType.TryGetValue(id.Type, out row))
 				{

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using NUnit.Framework;
 using RefinId;
@@ -105,21 +106,31 @@ namespace Refinid.Specs
 		}
 
 		[Test]
-		public void Read_should_reject_null_values()
-		{
-			Assert.Fail("Not implemented");
-		}
-
-		[Test]
 		public void Saved_should_reject_null_values()
 		{
-			Assert.Fail("Not implemented");			
+			// arrange
+			var storage = new DbLongIdStorage(ConnectionString);
+
+			// act + assert
+			Assert.That(() => storage.SaveLastValues(null), Throws.InstanceOf<ArgumentNullException>());
 		}
 
 		[Test]
 		public void Saved_should_reject_non_unique_types()
 		{
-			Assert.Fail("Not implemented");
+			// arrange
+			const long newId1 = 0x1FEECCBB44332211;
+			const long newId2 = 0x3FEECCBB44332211;
+			var valuesWithNonUniqueTypes = new[] { newId1 + 1, newId2 + 2, newId1 + 3 };
+
+			using (SqlConnection connection = CreateConnection())
+			{
+				var storage = new DbLongIdStorage(ConnectionString);
+
+				// act + assert
+				Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
+					Throws.ArgumentException);
+			}
 		}
 	}
 }
