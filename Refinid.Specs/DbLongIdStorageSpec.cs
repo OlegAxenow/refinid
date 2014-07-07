@@ -30,13 +30,13 @@ namespace Refinid.Specs
 				}
 
 				UseTestDatabase(command);
+				command.Run("IF OBJECT_ID('" + TableName + "') IS NOT NULL " +
+				            " DROP TABLE " + TableName);
 
-				command.Run("IF OBJECT_ID('" + TableName + "') IS NULL " +
-				            " CREATE TABLE " + TableName + " (" + DbLongIdStorage.TypeColumnName +
-							" smallint not null primary key, " + DbLongIdStorage.IdColumnName +
-							" bigint not null);");
-
-				command.Run("DELETE FROM " + TableName);
+				command.Run("CREATE TABLE " + TableName + " (" + DbLongIdStorage.TypeColumnName +
+				            " smallint not null primary key, " + DbLongIdStorage.IdColumnName +
+				            " bigint not null, " + DbLongIdStorage.TableNameColumnName +
+				            " sysname not null)");
 			}
 		}
 
@@ -51,6 +51,34 @@ namespace Refinid.Specs
 		}
 
 		[Test]
+		public void Saved_should_reject_non_unique_types()
+		{
+			// arrange
+			const long newId1 = 0x1FEECCBB44332211;
+			const long newId2 = 0x3FEECCBB44332211;
+			var valuesWithNonUniqueTypes = new[] { newId1 + 1, newId2 + 2, newId1 + 3 };
+
+			using (SqlConnection connection = CreateConnection())
+			{
+				var storage = new DbLongIdStorage(ConnectionString);
+
+				// act + assert
+				Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
+					Throws.ArgumentException);
+			}
+		}
+
+		[Test]
+		public void Saved_should_reject_null_values()
+		{
+			// arrange
+			var storage = new DbLongIdStorage(ConnectionString);
+
+			// act + assert
+			Assert.That(() => storage.SaveLastValues(null), Throws.InstanceOf<ArgumentNullException>());
+		}
+
+		[Test]
 		public void Values_should_be_loaded_from_database()
 		{
 			// arrange
@@ -59,9 +87,9 @@ namespace Refinid.Specs
 
 			using (SqlConnection connection = CreateConnection())
 			{
-				var command = connection.CreateCommand();
-				command.InsertInitialId(TableName, initialId1);
-				command.InsertInitialId(TableName, initialId2);
+				SqlCommand command = connection.CreateCommand();
+				command.InsertInitialId(TableName, initialId1, "fake_table");
+				command.InsertInitialId(TableName, initialId2, "fake_table");
 
 				var storage = new DbLongIdStorage(ConnectionString);
 
@@ -80,15 +108,15 @@ namespace Refinid.Specs
 		public void Values_should_be_saved_to_database()
 		{
 			// arrange
-			const long initialId1 = 0x1FEECCBB44332211;	// update
-			const long initialId2 = 0x2FEECCBB44332211;	// delete
-			const long newId3 = 0x3FEECCBB44332211;		// insert
+			const long initialId1 = 0x1FEECCBB44332211; // update
+			const long initialId2 = 0x2FEECCBB44332211; // delete
+			const long newId3 = 0x3FEECCBB44332211; // insert
 
 			using (SqlConnection connection = CreateConnection())
 			{
-				var command = connection.CreateCommand();
-				command.InsertInitialId(TableName, initialId1);
-				command.InsertInitialId(TableName, initialId2);
+				SqlCommand command = connection.CreateCommand();
+				command.InsertInitialId(TableName, initialId1, "fake_table");
+				command.InsertInitialId(TableName, initialId2, "fake_table");
 
 				var storage = new DbLongIdStorage(ConnectionString);
 
@@ -102,34 +130,6 @@ namespace Refinid.Specs
 
 				// cleanup
 				command.Run("DELETE FROM " + TableName);
-			}
-		}
-
-		[Test]
-		public void Saved_should_reject_null_values()
-		{
-			// arrange
-			var storage = new DbLongIdStorage(ConnectionString);
-
-			// act + assert
-			Assert.That(() => storage.SaveLastValues(null), Throws.InstanceOf<ArgumentNullException>());
-		}
-
-		[Test]
-		public void Saved_should_reject_non_unique_types()
-		{
-			// arrange
-			const long newId1 = 0x1FEECCBB44332211;
-			const long newId2 = 0x3FEECCBB44332211;
-			var valuesWithNonUniqueTypes = new[] { newId1 + 1, newId2 + 2, newId1 + 3 };
-
-			using (SqlConnection connection = CreateConnection())
-			{
-				var storage = new DbLongIdStorage(ConnectionString);
-
-				// act + assert
-				Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
-					Throws.ArgumentException);
 			}
 		}
 	}

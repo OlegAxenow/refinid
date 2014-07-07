@@ -11,7 +11,7 @@ namespace Refinid.Specs
 	public class DefaultLongIdFactorySpec
 	{
 		[TestCase(0x0101AABB01010101, 0x0001AABB01010101, 0x0F01AABB01010101, 0x0201AABB01010101)]
-		[TestCase(new[] {0x0101AABB01010101L})]
+		[TestCase(new[] { 0x0101AABB01010101L })]
 		[TestCase]
 		public void Last_values_should_be_correctly_loaded(params long[] values)
 		{
@@ -54,7 +54,7 @@ namespace Refinid.Specs
 			// act
 			new MultiThreadTestRunner(() =>
 			{
-				var id = factory.Create(0x0101);
+				long id = factory.Create(0x0101);
 				queue.Enqueue(id);
 
 				Debug.WriteLine(id);

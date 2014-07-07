@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\RefinId.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -37,7 +38,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DbLongIdStorageWithInstaller.cs" />
+    <Compile Include="SqlClientLongIdInstaller.cs" />
     <Compile Include="DefaultLongIdFactory.cs" />
     <Compile Include="ILongIdFactory.cs" />
     <Compile Include="ILongIdStorage.cs" />

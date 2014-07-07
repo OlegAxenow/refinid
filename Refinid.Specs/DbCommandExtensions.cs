@@ -6,13 +6,13 @@ using RefinId;
 namespace Refinid.Specs
 {
 	/// <summary>
-	/// Extensions to prevent tunnel syndrome :)
+	///     Extensions to prevent tunnel syndrome :)
 	/// </summary>
 	public static class DbCommandExtensions
 	{
 		/// <summary>
-		/// Sets and executes <paramref name="commandText"/> immediately.
-		/// Opens <see cref="DbCommand.Connection"/> if necessary.
+		///     Sets and executes <paramref name="commandText" /> immediately.
+		///     Opens <see cref="DbCommand.Connection" /> if necessary.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
 		public static void Run(this DbCommand command, string commandText)
@@ -29,16 +29,19 @@ namespace Refinid.Specs
 		}
 
 		/// <summary>
-		/// Inserts <paramref name="initialId"/> into <paramref name="tableName"/>.
+		///     Inserts <paramref name="initialId" /> into <paramref name="lastIdentifiersTableName" />.
 		/// </summary>
-		/// <remarks> Expects that table have single column compatible with <see cref="long"/> type.
+		/// <remarks>
+		///     Expects that table have single column compatible with <see cref="long" /> type.
 		/// </remarks>
-		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>		 
-		public static void InsertInitialId(this DbCommand command, string tableName, long initialId)
+		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
+		public static void InsertInitialId(this DbCommand command, string lastIdentifiersTableName,
+			long initialId, string tableNameForType)
 		{
-			if (tableName == null) throw new ArgumentNullException("tableName");
-			command.Run("INSERT INTO " + tableName + 
-				"VALUES (" + ((LongId)initialId).Type + "," + initialId + ")");
+			if (lastIdentifiersTableName == null) throw new ArgumentNullException("lastIdentifiersTableName");
+			command.Run("INSERT INTO " + lastIdentifiersTableName +
+			            "VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
+						tableNameForType + "')");
 		}
 	}
 }
