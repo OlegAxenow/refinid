@@ -20,7 +20,7 @@ namespace RefinId
 		/// <summary>
 		/// Stores last values.
 		/// </summary>
-		private readonly Dictionary<ushort, IdWrapper> _lastValues;
+		private readonly Dictionary<short, IdWrapper> _lastValues;
 
 		/// <summary>
 		/// Initializes factory with <paramref name="storage"/>.
@@ -31,7 +31,7 @@ namespace RefinId
 			var values = SafeGetLastValues(storage);
 			_storage = storage;
 
-			_lastValues = new Dictionary<ushort, IdWrapper>(values.Count);
+			_lastValues = new Dictionary<short, IdWrapper>(values.Count);
 
 			for (int i = values.Count - 1; i >= 0; i--)
 			{
@@ -45,13 +45,13 @@ namespace RefinId
 
 			var values = storage.GetLastValues();
 
-			if (values.Count > ushort.MaxValue)
+			if (values.Count > short.MaxValue)
 				throw new InvalidOperationException(
-					string.Format("Length of avaiable types {0} greater than {1}.", values.Count, ushort.MaxValue));
+					string.Format("Length of avaiable types {0} greater than {1}.", values.Count, short.MaxValue));
 			return values;
 		}
 
-		public long Create(ushort type)
+		public long Create(short type)
 		{
 			return Interlocked.Increment(ref _lastValues[type].Id);
 		}
