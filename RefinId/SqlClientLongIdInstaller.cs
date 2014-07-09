@@ -14,7 +14,7 @@ namespace RefinId
 		/// <summary>
 		///     Initializes instance with specified parameters.
 		/// </summary>
-		/// <param name="connectionString"> Valid connection string to access to database.</param>
+		/// <param name="connectionString"> Valid connection string to access a database.</param>
 		/// <param name="tableName"> Name of the table with last identifiers values.</param>
 		public SqlClientLongIdInstaller(string connectionString,
 			string tableName = TableCommandBuilder.DefaultTableName)

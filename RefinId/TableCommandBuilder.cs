@@ -36,7 +36,7 @@ namespace RefinId
 		public const string DefaultProviderName = "System.Data.SqlClient";
 
 		private readonly DbProviderFactory _factory;
-		private readonly string _selectText;
+		private readonly string _selectCommandText;
 		private readonly string _tableName;
 
 		/// <summary>
@@ -71,10 +71,14 @@ namespace RefinId
 
 			_tableName = dbCommandBuilder.QuoteIdentifier(tableName);
 
-			_selectText = "select " + TypeColumnName + "," + IdColumnName + "," + TableNameColumnName +
+			_selectCommandText = "select " + TypeColumnName + "," + IdColumnName + "," + TableNameColumnName +
 			              " from " + _tableName;
 		}
 
+		/// <summary>
+		/// Creates new <see cref="DbConnection"/> instance.
+		/// </summary>
+		/// <exception cref="InvalidOperationException"> If <see cref="DbProviderFactory"/> returns null connection.</exception>
 		public DbConnection CreateConnection()
 		{
 			DbConnection connection = _factory.CreateConnection();
@@ -82,20 +86,30 @@ namespace RefinId
 			return connection;
 		}
 
+		/// <summary>
+		/// Name of the table with information about last identifiers and types.
+		/// </summary>
 		public string TableName
 		{
 			get { return _tableName; }
 		}
 
-		public string SelectText
+		/// <summary>
+		/// Command text for select statement from <see cref="TableName"/>.
+		/// </summary>
+		public string SelectCommandText
 		{
-			get { return _selectText; }
+			get { return _selectCommandText; }
 		}
 
+		/// <summary>
+		/// Initializes <see cref="DbCommandBuilder"/> with specified command and <see cref="SelectCommandText"/>.
+		/// </summary>
+		/// <exception cref="InvalidOperationException"> If a <see cref="DbProviderFactory"/> cannot create needed classes. </exception>
 		public DbCommandBuilder InitializeCommandBuilderAndAdapter(DbCommand command)
 		{
 			command.CommandType = CommandType.Text;
-			command.CommandText = _selectText;
+			command.CommandText = _selectCommandText;
 
 			DbCommandBuilder builder = _factory.CreateCommandBuilder();
 			if (builder == null)

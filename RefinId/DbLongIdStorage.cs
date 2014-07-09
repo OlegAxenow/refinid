@@ -18,7 +18,7 @@ namespace RefinId
 		///      Initializes instance with specified parameters and checks <see cref="DbProviderFactory" />
 		///      creation for <paramref name="providerName" />.
 		///  </summary>
-		/// <param name="connectionString"> Valid connection string to access to database.</param>
+		/// <param name="connectionString"> Valid connection string to access a database.</param>
 		/// <param name="tableName">
 		///     See <see cref="TableCommandBuilder"/> for details.
 		/// </param>
@@ -53,7 +53,7 @@ namespace RefinId
 				OnBeforeLoadValues(connection);
 				using (DbCommand command = connection.CreateCommand())
 				{
-					command.CommandText = _tableCommandBuilder.SelectText;
+					command.CommandText = _tableCommandBuilder.SelectCommandText;
 					command.CommandType = CommandType.Text;
 
 					using (DbDataReader reader = command.ExecuteReader())
