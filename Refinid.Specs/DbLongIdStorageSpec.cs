@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.SqlClient;
 using NUnit.Framework;
 using RefinId;
@@ -13,14 +14,14 @@ namespace Refinid.Specs
 			"Server=(localdb)\\v11.0;Integrated Security=true;Database=" + TestDatabaseName;
 
 		private const string TestDatabaseName = "RefineIdTest";
-		private const string TableName = "[" + DbLongIdStorage.DefaultTableName + "]";
+		private const string TableName = "[" + TableCommandBuilder.DefaultTableName + "]";
 
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
 			using (SqlConnection connection = CreateConnection())
 			{
-				SqlCommand command = connection.CreateCommand();
+				var command = connection.CreateCommand();
 				try
 				{
 					command.Run("CREATE DATABASE " + TestDatabaseName);
@@ -33,10 +34,10 @@ namespace Refinid.Specs
 				command.Run("IF OBJECT_ID('" + TableName + "') IS NOT NULL " +
 				            " DROP TABLE " + TableName);
 
-				command.Run("CREATE TABLE " + TableName + " (" + DbLongIdStorage.TypeColumnName +
-				            " smallint not null primary key, " + DbLongIdStorage.IdColumnName +
-				            " bigint not null, " + DbLongIdStorage.TableNameColumnName +
-				            " sysname not null)");
+				command.Run("CREATE TABLE " + TableName + " (" + TableCommandBuilder.TypeColumnName +
+				            " smallint not null primary key, " + TableCommandBuilder.IdColumnName +
+				            " bigint not null, " + TableCommandBuilder.TableNameColumnName +
+				            " sysname null)");
 			}
 		}
 
@@ -50,6 +51,21 @@ namespace Refinid.Specs
 			return new SqlConnection(ConnectionString);
 		}
 
+		/// <summary>
+		///     Inserts <paramref name="initialId" /> into <paramref name="lastIdentifiersTableName" />.
+		/// </summary>
+		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
+		public static void InsertInitialId(DbCommand command, string lastIdentifiersTableName,
+			long initialId, string tableNameForType)
+		{
+			if (command == null) throw new ArgumentNullException("command");
+			if (lastIdentifiersTableName == null) throw new ArgumentNullException("lastIdentifiersTableName");
+			if (tableNameForType == null) throw new ArgumentNullException("tableNameForType");
+			command.Run("INSERT INTO " + lastIdentifiersTableName +
+			            "VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
+			            tableNameForType + "')");
+		}
+
 		[Test]
 		public void Saved_should_reject_non_unique_types()
 		{
@@ -58,14 +74,11 @@ namespace Refinid.Specs
 			const long newId2 = 0x3FEECCBB44332211;
 			var valuesWithNonUniqueTypes = new[] { newId1 + 1, newId2 + 2, newId1 + 3 };
 
-			using (SqlConnection connection = CreateConnection())
-			{
-				var storage = new DbLongIdStorage(ConnectionString);
+			var storage = new DbLongIdStorage(ConnectionString);
 
-				// act + assert
-				Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
-					Throws.ArgumentException);
-			}
+			// act + assert
+			Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
+				Throws.ArgumentException);
 		}
 
 		[Test]
@@ -88,8 +101,8 @@ namespace Refinid.Specs
 			using (SqlConnection connection = CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
-				command.InsertInitialId(TableName, initialId1, "fake_table");
-				command.InsertInitialId(TableName, initialId2, "fake_table");
+				InsertInitialId(command, TableName, initialId1, "fake_table");
+				InsertInitialId(command, TableName, initialId2, "fake_table");
 
 				var storage = new DbLongIdStorage(ConnectionString);
 
@@ -115,8 +128,8 @@ namespace Refinid.Specs
 			using (SqlConnection connection = CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
-				command.InsertInitialId(TableName, initialId1, "fake_table");
-				command.InsertInitialId(TableName, initialId2, "fake_table");
+				InsertInitialId(command, TableName, initialId1, "fake_table");
+				InsertInitialId(command, TableName, initialId2, "fake_table");
 
 				var storage = new DbLongIdStorage(ConnectionString);
 

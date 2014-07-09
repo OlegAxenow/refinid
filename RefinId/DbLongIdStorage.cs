@@ -11,70 +11,27 @@ namespace RefinId
 	/// <remarks>By default, expects table _longIds(id as long).</remarks>
 	public class DbLongIdStorage : ILongIdStorage
 	{
-		/// <summary>
-		///     Default name of the table with information about last identifiers and types.
-		/// </summary>
-		public const string DefaultTableName = "_longIds";
-
-		/// <summary>
-		///     Default provider's invariant name.
-		/// </summary>
-		public const string DefaultProviderName = "System.Data.SqlClient";
-
-		/// <summary>
-		///     Name of the identifier column in <see cref="TableName" />.
-		/// </summary>
-		public const string IdColumnName = "id";
-
-		/// <summary>
-		///     Name of the type column in <see cref="TableName" />.
-		/// </summary>
-		public const string TypeColumnName = "typeid";
-
-		/// <summary>
-		///     Name of the column with table name for type,
-		///     specified by <see cref="TypeColumnName" /> in <see cref="TableName" />.
-		/// </summary>
-		public const string TableNameColumnName = "tablename";
-
+		private readonly TableCommandBuilder _tableCommandBuilder;
 		private readonly string _connectionString;
-		private readonly DbProviderFactory _factory;
-		private readonly string _tableName;
 
-		/// <summary>
-		///     Initializes instance with specified parameters and checks <see cref="DbProviderFactory" />
-		///     creation for <paramref name="providerName" />.
-		/// </summary>
+		///  <summary>
+		///      Initializes instance with specified parameters and checks <see cref="DbProviderFactory" />
+		///      creation for <paramref name="providerName" />.
+		///  </summary>
 		/// <param name="connectionString"> Valid connection string to access to database.</param>
-		/// <param name="providerName">
-		///     Provider name to instantiate <see cref="DbProviderFactory" />.
-		///     You can get it from config file (&lt;connectionStrings&gt; element).
-		/// </param>
 		/// <param name="tableName">
-		///     Name of the table with information about last identifiers and types.
-		///     This table should contains (typeid, id) columns with <see cref="short" /> and <see cref="long" /> types
-		///     respectively.
-		///     "typeid" column is redundant, but needed because of limited <see cref="DbProviderFactory" /> API.
+		///     See <see cref="TableCommandBuilder"/> for details.
 		/// </param>
-		public DbLongIdStorage(string connectionString,
-			string providerName = DefaultProviderName,
-			string tableName = DefaultTableName)
+		/// <param name="providerName">
+		///     See <see cref="TableCommandBuilder"/> for details.
+		/// </param>
+		public DbLongIdStorage(string connectionString, string tableName = null, string providerName = null)
 		{
 			if (connectionString == null) throw new ArgumentNullException("connectionString");
-			if (providerName == null) throw new ArgumentNullException("providerName");
-			if (tableName == null) throw new ArgumentNullException("tableName");
-
+			
 			_connectionString = connectionString;
 
-			_factory = DbProviderFactories.GetFactory(providerName);
-			if (_factory == null)
-				throw new ArgumentOutOfRangeException("providerName");
-
-			DbCommandBuilder dbCommandBuilder = _factory.CreateCommandBuilder();
-			if (dbCommandBuilder == null)
-				throw new ArgumentOutOfRangeException("providerName");
-
-			_tableName = dbCommandBuilder.QuoteIdentifier(tableName);
+			_tableCommandBuilder = new TableCommandBuilder(tableName, providerName);
 		}
 
 		/// <summary>
@@ -82,7 +39,7 @@ namespace RefinId
 		/// </summary>
 		public string TableName
 		{
-			get { return _tableName; }
+			get { return _tableCommandBuilder.TableName; }
 		}
 
 		/// <summary>
@@ -96,7 +53,7 @@ namespace RefinId
 				OnBeforeLoadValues(connection);
 				using (DbCommand command = connection.CreateCommand())
 				{
-					command.CommandText = GetSelectCommandText();
+					command.CommandText = _tableCommandBuilder.SelectText;
 					command.CommandType = CommandType.Text;
 
 					using (DbDataReader reader = command.ExecuteReader())
@@ -154,15 +111,9 @@ namespace RefinId
 			throw new NotImplementedException();
 		}
 
-		private string GetSelectCommandText()
-		{
-			return "select " + TypeColumnName + "," + IdColumnName + "," + TableNameColumnName +
-			       " from " + _tableName;
-		}
-
 		private void SaveToDatabase(IEnumerable<long> values, DbCommand command, bool removeUnusedRows)
 		{
-			DbCommandBuilder builder = InitializeCommandBuilderAndAdapter(command);
+			DbCommandBuilder builder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(command);
 
 			var dataSet = new DataSet();
 			builder.DataAdapter.Fill(dataSet);
@@ -205,9 +156,9 @@ namespace RefinId
 				{
 					row = table.NewRow();
 					table.Rows.Add(row);
-					row[TypeColumnName] = id.Type;
+					row[TableCommandBuilder.TypeColumnName] = id.Type;
 				}
-				row[IdColumnName] = id.Value;
+				row[TableCommandBuilder.IdColumnName] = id.Value;
 			}
 
 			if (removeUnusedRows)
@@ -216,7 +167,7 @@ namespace RefinId
 				{
 					DataRow row = table.Rows[i];
 					// if "typeid" will be removed, we can use:  ((LongId)Convert.ToInt64(row[IdColumnName])).Type;
-					if (tableIdMapByType.ContainsKey(Convert.ToInt16(row[TypeColumnName])))
+					if (tableIdMapByType.ContainsKey(Convert.ToInt16(row[TableCommandBuilder.TypeColumnName])))
 					{
 						row.Delete();
 					}
@@ -229,29 +180,10 @@ namespace RefinId
 			var tableIdMapByType = new Dictionary<short, DataRow>(table.Rows.Count);
 			foreach (DataRow row in table.Rows)
 			{
-				LongId id = Convert.ToInt64(row[IdColumnName]);
+				LongId id = Convert.ToInt64(row[TableCommandBuilder.IdColumnName]);
 				tableIdMapByType.Add(id.Type, row);
 			}
 			return tableIdMapByType;
-		}
-
-		private DbCommandBuilder InitializeCommandBuilderAndAdapter(DbCommand command)
-		{
-			command.CommandType = CommandType.Text;
-			command.CommandText = GetSelectCommandText();
-
-			DbCommandBuilder builder = _factory.CreateCommandBuilder();
-			if (builder == null)
-				throw new InvalidOperationException(
-					string.Format("Factory {0} does not support command builders.", _factory.GetType().Name));
-
-			builder.DataAdapter = _factory.CreateDataAdapter();
-			if (builder.DataAdapter == null)
-				throw new InvalidOperationException(
-					string.Format("Factory {0} does not support data adapters.", _factory.GetType().Name));
-
-			builder.DataAdapter.SelectCommand = command;
-			return builder;
 		}
 
 		/// <summary>
@@ -272,8 +204,7 @@ namespace RefinId
 
 		private DbConnection OpenConnection()
 		{
-			DbConnection connection = _factory.CreateConnection();
-			if (connection == null) throw new InvalidOperationException("Cannot create connection to database.");
+			DbConnection connection = _tableCommandBuilder.CreateConnection();
 			try
 			{
 				connection.ConnectionString = _connectionString;

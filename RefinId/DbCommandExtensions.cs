@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId
 {
 	/// <summary>
 	///     Extensions to prevent tunnel syndrome :)
@@ -26,22 +25,6 @@ namespace Refinid.Specs
 			command.CommandType = CommandType.Text;
 			command.CommandText = commandText;
 			command.ExecuteNonQuery();
-		}
-
-		/// <summary>
-		///     Inserts <paramref name="initialId" /> into <paramref name="lastIdentifiersTableName" />.
-		/// </summary>
-		/// <remarks>
-		///     Expects that table have single column compatible with <see cref="long" /> type.
-		/// </remarks>
-		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
-		public static void InsertInitialId(this DbCommand command, string lastIdentifiersTableName,
-			long initialId, string tableNameForType)
-		{
-			if (lastIdentifiersTableName == null) throw new ArgumentNullException("lastIdentifiersTableName");
-			command.Run("INSERT INTO " + lastIdentifiersTableName +
-			            "VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
-						tableNameForType + "')");
 		}
 	}
 }
