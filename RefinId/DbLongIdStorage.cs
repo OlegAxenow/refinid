@@ -12,26 +12,16 @@ namespace RefinId
 	public class DbLongIdStorage : ILongIdStorage
 	{
 		private readonly TableCommandBuilder _tableCommandBuilder;
-		private readonly string _connectionString;
 
-		///  <summary>
-		///      Initializes instance with specified parameters and checks <see cref="DbProviderFactory" />
-		///      creation for <paramref name="providerName" />.
-		///  </summary>
-		/// <param name="connectionString"> Valid connection string to access a database.</param>
-		/// <param name="tableName">
-		///     See <see cref="TableCommandBuilder"/> for details.
-		/// </param>
-		/// <param name="providerName">
-		///     See <see cref="TableCommandBuilder"/> for details.
-		/// </param>
+		/// <summary>
+		///     Initializes <see cref="_tableCommandBuilder"/> with specified parameters.
+		/// </summary>
+		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
+		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
+		/// <param name="providerName"> See <see cref="TableCommandBuilder" /> for details.</param>
 		public DbLongIdStorage(string connectionString, string tableName = null, string providerName = null)
 		{
-			if (connectionString == null) throw new ArgumentNullException("connectionString");
-			
-			_connectionString = connectionString;
-
-			_tableCommandBuilder = new TableCommandBuilder(tableName, providerName);
+			_tableCommandBuilder = new TableCommandBuilder(connectionString, tableName, providerName);
 		}
 
 		/// <summary>
@@ -48,7 +38,7 @@ namespace RefinId
 		public List<long> GetLastValues(bool requestFromRealTables = false)
 		{
 			var result = new List<long>();
-			using (DbConnection connection = OpenConnection())
+			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
 			{
 				OnBeforeLoadValues(connection);
 				using (DbCommand command = connection.CreateCommand())
@@ -91,7 +81,7 @@ namespace RefinId
 		{
 			if (values == null) throw new ArgumentNullException("values");
 
-			using (DbConnection connection = OpenConnection())
+			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
 			{
 				OnBeforeSaveValues(connection);
 				using (DbCommand command = connection.CreateCommand())
@@ -200,28 +190,6 @@ namespace RefinId
 		/// <param name="connection">Opened connection to database.</param>
 		protected virtual void OnBeforeSaveValues(DbConnection connection)
 		{
-		}
-
-		private DbConnection OpenConnection()
-		{
-			DbConnection connection = _tableCommandBuilder.CreateConnection();
-			try
-			{
-				connection.ConnectionString = _connectionString;
-				connection.Open();
-			}
-			catch
-			{
-				try
-				{
-					connection.Close();
-				} // ReSharper disable once EmptyGeneralCatchClause
-				catch
-				{
-				}
-				throw;
-			}
-			return connection;
 		}
 	}
 }

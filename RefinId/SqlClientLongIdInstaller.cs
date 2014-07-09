@@ -8,22 +8,17 @@ namespace RefinId
 	/// </summary>
 	public class SqlClientLongIdInstaller
 	{
-		private readonly string _connectionString;
-		private readonly string _tableName;
+		private readonly TableCommandBuilder _tableCommandBuilder;
 
 		/// <summary>
-		///     Initializes instance with specified parameters.
+		///     Initializes <see cref="_tableCommandBuilder"/> with specified parameters.
 		/// </summary>
-		/// <param name="connectionString"> Valid connection string to access a database.</param>
-		/// <param name="tableName"> Name of the table with last identifiers values.</param>
-		public SqlClientLongIdInstaller(string connectionString,
-			string tableName = TableCommandBuilder.DefaultTableName)
+		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
+		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
+		public SqlClientLongIdInstaller(string connectionString, string tableName = null)
 		{
-			if (connectionString == null) throw new ArgumentNullException("connectionString");
-			if (tableName == null) throw new ArgumentNullException("tableName");
-
-			_connectionString = connectionString;
-			_tableName = tableName;
+			_tableCommandBuilder = new TableCommandBuilder(connectionString, tableName,
+				TableCommandBuilder.SqlProviderName);
 		}
 
 		/// <summary>
@@ -31,7 +26,7 @@ namespace RefinId
 		/// </summary>
 		public void Install()
 		{
-			using (var connection = new SqlConnection(_connectionString))
+			using (var connection = (SqlConnection)_tableCommandBuilder.OpenConnection())
 			{
 				var command = connection.CreateCommand();
 
@@ -49,7 +44,7 @@ namespace RefinId
 		/// </summary>
 		public string TableName
 		{
-			get { return _tableName; }
+			get { return _tableCommandBuilder.TableName; }
 		}
 	}
 }
