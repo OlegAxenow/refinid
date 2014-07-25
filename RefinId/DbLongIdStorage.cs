@@ -96,9 +96,8 @@ namespace RefinId
 		/// </summary>
 		public void SaveLastValue(long value)
 		{
-			// TODO: replace by optimized code
 			SaveLastValues(new[] { value }, false);
-			throw new NotImplementedException();
+			throw new NotImplementedException("Should be replaced by optimized code");
 		}
 
 		private void SaveToDatabase(IEnumerable<long> values, DbCommand command, bool removeUnusedRows)

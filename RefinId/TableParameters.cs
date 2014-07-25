@@ -1,7 +1,7 @@
 ﻿namespace RefinId
 {
 	/// <summary>
-	/// Contains parameters for using by installers and storages.
+	/// Contains table's parameters for using by installers and storages.
 	/// </summary>
 	public class TableParameters
 	{

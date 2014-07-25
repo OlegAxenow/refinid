@@ -10,27 +10,23 @@ namespace Refinid.Specs
 	[TestFixture]
 	public class DbLongIdStorageSpec
 	{
-		private const string ConnectionString =
-			"Server=(localdb)\\v11.0;Integrated Security=true;Database=" + TestDatabaseName;
-
-		private const string TestDatabaseName = "RefineIdTest";
 		private const string TableName = "[" + TableCommandBuilder.DefaultTableName + "]";
 
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
-			using (SqlConnection connection = CreateConnection())
+			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				var command = connection.CreateCommand();
 				try
 				{
-					command.Run("CREATE DATABASE " + TestDatabaseName);
+					command.Run("CREATE DATABASE " + ConnectionHelper.TestDatabaseName);
 				} // ReSharper disable once EmptyGeneralCatchClause
 				catch
 				{
 				}
 
-				UseTestDatabase(command);
+				ConnectionHelper.UseTestDatabase(command);
 				command.Run("IF OBJECT_ID('" + TableName + "') IS NOT NULL " +
 				            " DROP TABLE " + TableName);
 
@@ -39,16 +35,6 @@ namespace Refinid.Specs
 				            " bigint not null, " + TableCommandBuilder.TableNameColumnName +
 				            " sysname null)");
 			}
-		}
-
-		private static void UseTestDatabase(SqlCommand command)
-		{
-			command.Run("USE " + TestDatabaseName);
-		}
-
-		private static SqlConnection CreateConnection()
-		{
-			return new SqlConnection(ConnectionString);
 		}
 
 		/// <summary>
@@ -74,7 +60,7 @@ namespace Refinid.Specs
 			const long newId2 = 0x3FEECCBB44332211;
 			var valuesWithNonUniqueTypes = new[] { newId1 + 1, newId2 + 2, newId1 + 3 };
 
-			var storage = new DbLongIdStorage(ConnectionString);
+			var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
 			// act + assert
 			Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
@@ -85,7 +71,7 @@ namespace Refinid.Specs
 		public void Saved_should_reject_null_values()
 		{
 			// arrange
-			var storage = new DbLongIdStorage(ConnectionString);
+			var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
 			// act + assert
 			Assert.That(() => storage.SaveLastValues(null), Throws.InstanceOf<ArgumentNullException>());
@@ -98,13 +84,13 @@ namespace Refinid.Specs
 			const long initialId1 = 0x1FEECCBB44332211;
 			const long initialId2 = 0x2FEECCBB44332211;
 
-			using (SqlConnection connection = CreateConnection())
+			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
 				InsertInitialId(command, TableName, initialId1, "fake_table");
 				InsertInitialId(command, TableName, initialId2, "fake_table");
 
-				var storage = new DbLongIdStorage(ConnectionString);
+				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
 				// act
 				List<long> lastValues = storage.GetLastValues();
@@ -125,13 +111,13 @@ namespace Refinid.Specs
 			const long initialId2 = 0x2FEECCBB44332211; // delete
 			const long newId3 = 0x3FEECCBB44332211; // insert
 
-			using (SqlConnection connection = CreateConnection())
+			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
 				InsertInitialId(command, TableName, initialId1, "fake_table");
 				InsertInitialId(command, TableName, initialId2, "fake_table");
 
-				var storage = new DbLongIdStorage(ConnectionString);
+				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
 				// act
 				storage.SaveLastValues(new[] { initialId1 + 1, newId3 + 3 });
