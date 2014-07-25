@@ -34,6 +34,14 @@ namespace Refinid.Specs
 		}
 
 		[Test]
+		public void Additional_fields_should_be_properly_converted_to_long()
+		{
+			var id = new LongId(0x1FEE, 0xCC, 0xBB, 0x44332211);
+
+			Assert.That(id.Value, Is.EqualTo(0x1FEECCBB44332211));
+		}
+
+		[Test]
 		public void GetHashCode_should_not_change_value()
 		{
 			// arrange

@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 
 namespace RefinId
 {
 	/// <summary>
-	///     Installer for "System.Data.SqlClient" provider.
+	/// Installs <see cref="LongId"/> configuration for "System.Data.SqlClient" provider.
 	/// </summary>
+	/// <remarks>
+	/// Configuration table stores information about last identifiers and types for each configured table.</remarks>
 	public class SqlClientLongIdInstaller
 	{
 		private readonly TableCommandBuilder _tableCommandBuilder;
@@ -23,12 +24,12 @@ namespace RefinId
 		}
 
 		/// <summary>
-		/// Installs necessary values into storage.
+		/// Installs necessary configuration into storage.
 		/// </summary>
 		/// <param name="shard"> Current shard id to be stored into <see cref="LongId.Shard"/>.</param>
 		/// <param name="reserved"> Reserved value to be stored into <see cref="LongId.Reserved"/>.</param>
 		/// <param name="tables"> Optional tables to be included into configuration.</param>
-		public void Install(byte shard, byte reserved, IEnumerable<TableParameters> tables)
+		public void Install(byte shard, byte reserved, params TableParameters[] tables)
 		{
 			using (var connection = (SqlConnection)_tableCommandBuilder.OpenConnection())
 			{
@@ -55,7 +56,7 @@ namespace RefinId
 		}
 
 		/// <summary>
-		///     Name of the table with information about last identifiers and types.
+		///     Quoted table name for configuration.
 		/// </summary>
 		public string TableName
 		{
