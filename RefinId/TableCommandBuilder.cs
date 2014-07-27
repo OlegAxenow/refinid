@@ -63,6 +63,8 @@ namespace RefinId
 		///     <see cref="DefaultProviderName" /> if not specified.
 		///     You can get it from config file (&lt;connectionStrings&gt; element).
 		/// </param>
+		/// <exception cref="InvalidOperationException"> If <see cref="DbProviderFactory"/> for <paramref name="providerName"/>
+		/// cannot be obtained or cannot instantiate necessary classes.</exception>
 		public TableCommandBuilder(string connectionString, string tableName = null, string providerName = null)
 		{
 			if (providerName == null) providerName = DefaultProviderName;
@@ -73,16 +75,23 @@ namespace RefinId
 
 			_factory = DbProviderFactories.GetFactory(providerName);
 			if (_factory == null)
-				throw new ArgumentOutOfRangeException("providerName");
+				throw new InvalidOperationException("providerName");
 
-			DbCommandBuilder dbCommandBuilder = _factory.CreateCommandBuilder();
-			if (dbCommandBuilder == null)
-				throw new ArgumentOutOfRangeException("providerName");
-
-			_tableName = dbCommandBuilder.QuoteIdentifier(tableName);
+			_tableName = GetDbCommandBuilder().QuoteIdentifier(tableName);
 
 			_selectCommandText = "select " + TypeColumnName + "," + IdColumnName + "," + TableNameColumnName +
 			                     " from " + _tableName;
+		}
+
+		/// <summary>
+		/// Returns <see cref="DbCommandBuilder"/> from factory.
+		/// </summary>
+		public DbCommandBuilder GetDbCommandBuilder()
+		{
+			var dbCommandBuilder = _factory.CreateCommandBuilder();
+			if (dbCommandBuilder == null)
+				throw new InvalidOperationException("providerName");
+			return dbCommandBuilder;
 		}
 
 		/// <summary>
