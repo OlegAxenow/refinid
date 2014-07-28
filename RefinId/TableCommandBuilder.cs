@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Text;
 
 namespace RefinId
 {
@@ -26,6 +28,11 @@ namespace RefinId
 		public const string TableNameColumnName = "tablename";
 
 		/// <summary>
+		///     Name of the column with key column name from referenced table in <see cref="DbLongIdStorage.TableName" />.
+		/// </summary>
+		public const string KeyColumnName = "keyname";
+
+		/// <summary>
 		///     Default name of the table with information about last identifiers and types.
 		/// </summary>
 		public const string DefaultTableName = "_longIds";
@@ -42,6 +49,7 @@ namespace RefinId
 
 		private readonly string _connectionString;
 		private readonly DbProviderFactory _factory;
+		private readonly string _insertCommandPrefix;
 		private readonly string _selectCommandText;
 		private readonly string _tableName;
 
@@ -63,8 +71,10 @@ namespace RefinId
 		///     <see cref="DefaultProviderName" /> if not specified.
 		///     You can get it from config file (&lt;connectionStrings&gt; element).
 		/// </param>
-		/// <exception cref="InvalidOperationException"> If <see cref="DbProviderFactory"/> for <paramref name="providerName"/>
-		/// cannot be obtained or cannot instantiate necessary classes.</exception>
+		/// <exception cref="InvalidOperationException">
+		///     If <see cref="DbProviderFactory" /> for <paramref name="providerName" />
+		///     cannot be obtained or cannot instantiate necessary classes.
+		/// </exception>
 		public TableCommandBuilder(string connectionString, string tableName = null, string providerName = null)
 		{
 			if (providerName == null) providerName = DefaultProviderName;
@@ -79,19 +89,17 @@ namespace RefinId
 
 			_tableName = GetDbCommandBuilder().QuoteIdentifier(tableName);
 
-			_selectCommandText = "select " + TypeColumnName + "," + IdColumnName + "," + TableNameColumnName +
-			                     " from " + _tableName;
-		}
+			var stringBuilder = new StringBuilder();
+			stringBuilder.Append("select ");
+			AppendColumnList(stringBuilder);
+			stringBuilder.Append(" from ").Append(_tableName);
+			_selectCommandText = stringBuilder.ToString();
 
-		/// <summary>
-		/// Returns <see cref="DbCommandBuilder"/> from factory.
-		/// </summary>
-		public DbCommandBuilder GetDbCommandBuilder()
-		{
-			var dbCommandBuilder = _factory.CreateCommandBuilder();
-			if (dbCommandBuilder == null)
-				throw new InvalidOperationException("providerName");
-			return dbCommandBuilder;
+			stringBuilder.Length = 0;
+			stringBuilder.Append("insert into ").Append(_tableName).Append(" (");
+			AppendColumnList(stringBuilder);
+			stringBuilder.Append(") ");
+			_insertCommandPrefix = stringBuilder.ToString();
 		}
 
 		/// <summary>
@@ -103,21 +111,49 @@ namespace RefinId
 		}
 
 		/// <summary>
-		///     Command text for select statement from <see cref="TableName" />.
+		///     Returns first command part for insert before VALUES, i.e. INSERT INTO Table1 (...).
 		/// </summary>
-		public string SelectCommandText
+		public string InsertCommandPrefix
 		{
-			get { return _selectCommandText; }
+			get { return _insertCommandPrefix; }
+		}
+
+		private static void AppendColumnList(StringBuilder stringBuilder)
+		{
+			foreach (string columnName in GetColumnNames())
+				stringBuilder.Append(columnName).Append(",");
+			stringBuilder.Length--;
 		}
 
 		/// <summary>
-		///     Initializes <see cref="DbCommandBuilder" /> with specified command and <see cref="SelectCommandText" />.
+		///     Returns <see cref="DbCommandBuilder" /> from factory.
+		/// </summary>
+		public DbCommandBuilder GetDbCommandBuilder()
+		{
+			DbCommandBuilder dbCommandBuilder = _factory.CreateCommandBuilder();
+			if (dbCommandBuilder == null)
+				throw new InvalidOperationException("providerName");
+			return dbCommandBuilder;
+		}
+
+		/// <summary>
+		///     Creates and initializes <see cref="DbCommand" /> for select statement from <see cref="TableName" />.
+		/// </summary>
+		public DbCommand CreateSelectCommand(DbConnection connection)
+		{
+			DbCommand command = connection.CreateCommand();
+			command.CommandText = _selectCommandText;
+			command.CommandType = CommandType.Text;
+			return command;
+		}
+
+		/// <summary>
+		///     Initializes <see cref="DbCommandBuilder" /> with specified command and <see cref="CreateSelectCommand" />.
 		/// </summary>
 		/// <exception cref="InvalidOperationException"> If a <see cref="DbProviderFactory" /> cannot create needed classes. </exception>
-		public DbCommandBuilder InitializeCommandBuilderAndAdapter(DbCommand command)
+		public DbCommandBuilder InitializeCommandBuilderAndAdapter(DbConnection connection)
 		{
-			command.CommandType = CommandType.Text;
-			command.CommandText = _selectCommandText;
+			var command = CreateSelectCommand(connection);
 
 			DbCommandBuilder builder = _factory.CreateCommandBuilder();
 			if (builder == null)
@@ -159,6 +195,17 @@ namespace RefinId
 				throw;
 			}
 			return connection;
+		}
+
+		/// <summary>
+		///     Returns all column names for configuration table.
+		/// </summary>
+		public static IEnumerable<string> GetColumnNames()
+		{
+			yield return TypeColumnName;
+			yield return IdColumnName;
+			yield return TableNameColumnName;
+			yield return KeyColumnName;
 		}
 	}
 }

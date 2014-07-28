@@ -33,7 +33,7 @@ namespace Refinid.Specs
 				command.Run("CREATE TABLE " + TableName + " (" + TableCommandBuilder.TypeColumnName +
 				            " smallint not null primary key, " + TableCommandBuilder.IdColumnName +
 				            " bigint not null, " + TableCommandBuilder.TableNameColumnName +
-				            " sysname null)");
+							" sysname null," + TableCommandBuilder.KeyColumnName + " sysname null)");
 			}
 		}
 
@@ -42,14 +42,14 @@ namespace Refinid.Specs
 		/// </summary>
 		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
 		public static void InsertInitialId(DbCommand command, string lastIdentifiersTableName,
-			long initialId, string tableNameForType)
+			long initialId, string tableNameForType, string keyColumnName)
 		{
 			if (command == null) throw new ArgumentNullException("command");
 			if (lastIdentifiersTableName == null) throw new ArgumentNullException("lastIdentifiersTableName");
 			if (tableNameForType == null) throw new ArgumentNullException("tableNameForType");
 			command.Run("INSERT INTO " + lastIdentifiersTableName +
 			            "VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
-			            tableNameForType + "')");
+			            tableNameForType + "', '" + keyColumnName + "')");
 		}
 
 		[Test]
@@ -87,8 +87,8 @@ namespace Refinid.Specs
 			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
-				InsertInitialId(command, TableName, initialId1, "fake_table");
-				InsertInitialId(command, TableName, initialId2, "fake_table");
+				InsertInitialId(command, TableName, initialId1, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, initialId2, "fake_table", "fake_id");
 
 				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
@@ -114,8 +114,8 @@ namespace Refinid.Specs
 			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
-				InsertInitialId(command, TableName, initialId1, "fake_table");
-				InsertInitialId(command, TableName, initialId2, "fake_table");
+				InsertInitialId(command, TableName, initialId1, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, initialId2, "fake_table", "fake_id");
 
 				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 

@@ -39,6 +39,8 @@ namespace Refinid.Specs
 			using (var connection = ConnectionHelper.CreateConnection())
 			{
 				var command = connection.CreateCommand();
+				var builder = new TableCommandBuilder(connection.ConnectionString);
+				command.Run("IF OBJECT_ID('" + builder.TableName + "') IS NOT NULL DROP TABLE " + builder.TableName);
 				command.Run("IF OBJECT_ID('TestId1') IS NOT NULL DROP TABLE TestId1; " +
 							" CREATE TABLE TestId1 (Id bigint PRIMARY KEY, Name sysname);");
 				command.Run("IF OBJECT_ID('TestId2') IS NOT NULL DROP TABLE TestId2; " +

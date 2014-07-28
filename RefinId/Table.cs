@@ -39,14 +39,17 @@ namespace RefinId
 		public string Schema { get; private set; }
 
 		/// <summary>
-		///     Unquoted table's name.
+		///     Optional unquoted table's name.
 		/// </summary>
+		/// <remarks> Optional means that storage should work without <see cref="TableName"/> for simple cases,
+		/// but installers can require <see cref="TableName"/>. </remarks>
 		public string TableName { get; private set; }
 
 		/// <summary>
 		///     Optional unquoted key column's name.
 		/// </summary>
-		/// <remarks> If not specified, most appropriate key column used by installer.</remarks>
+		/// <remarks> If not specified, most appropriate key column used by installer and 
+		/// storage should work without <see cref="KeyColumnName"/> for simple cases.</remarks>
 		public string KeyColumnName { get; private set; }
 	}
 }

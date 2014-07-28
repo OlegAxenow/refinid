@@ -14,7 +14,7 @@ namespace RefinId
 		private readonly TableCommandBuilder _tableCommandBuilder;
 
 		/// <summary>
-		///     Initializes <see cref="_tableCommandBuilder"/> with specified parameters.
+		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
 		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
@@ -37,39 +37,44 @@ namespace RefinId
 		/// </summary>
 		public List<long> GetLastValues(bool requestFromRealTables = false)
 		{
-			var result = new List<long>();
 			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
 			{
 				OnBeforeLoadValues(connection);
-				using (DbCommand command = connection.CreateCommand())
+				using (DbCommand command = _tableCommandBuilder.CreateSelectCommand(connection))
 				{
-					command.CommandText = _tableCommandBuilder.SelectCommandText;
-					command.CommandType = CommandType.Text;
-
-					using (DbDataReader reader = command.ExecuteReader())
-					{
-						while (reader.Read())
-						{
-							const int idOrdinal = 1;
-							const int typeOrdinal = 0;
-
-							var id = (LongId)reader.GetInt64(idOrdinal);
-							if (reader.GetInt16(typeOrdinal) != id.Type)
-								throw new InvalidOperationException(
-									string.Format("Type for id {0} should be {1} but equals to {2}.",
-										id, id.Type, reader.GetInt16(typeOrdinal)));
-
-							if (!requestFromRealTables)
-							{
-								result.Add(id);
-							}
-
-							// TODO: implement reading from real tables with SELECT MAX(...
-						}
-					}
+					if (requestFromRealTables)
+						return SelectValuesFromTablesAndSaveToConfiguration(command);
+					return SelectValuesFromConfiguration(command);
 				}
 			}
+		}
 
+		private List<long> SelectValuesFromTablesAndSaveToConfiguration(DbCommand command)
+		{
+			DbCommandBuilder dbCommandBuilder = _tableCommandBuilder.GetDbCommandBuilder();
+
+			throw new NotImplementedException("Reading from real tables with SELECT MAX not implemented.");
+		}
+
+		private static List<long> SelectValuesFromConfiguration(DbCommand command)
+		{
+			var result = new List<long>();
+			using (DbDataReader reader = command.ExecuteReader())
+			{
+				while (reader.Read())
+				{
+					const int idOrdinal = 1;
+					const int typeOrdinal = 0;
+
+					var id = (LongId)reader.GetInt64(idOrdinal);
+					if (reader.GetInt16(typeOrdinal) != id.Type)
+						throw new InvalidOperationException(
+							string.Format("Type for id {0} should be {1} but equals to {2}.",
+								id, id.Type, reader.GetInt16(typeOrdinal)));
+
+					result.Add(id);
+				}
+			}
 			return result;
 		}
 
@@ -84,10 +89,7 @@ namespace RefinId
 			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
 			{
 				OnBeforeSaveValues(connection);
-				using (DbCommand command = connection.CreateCommand())
-				{
-					SaveToDatabase(values, command, removeUnusedRows);
-				}
+				SaveToDatabase(values, connection, removeUnusedRows);
 			}
 		}
 
@@ -100,9 +102,9 @@ namespace RefinId
 			throw new NotImplementedException("Should be replaced by optimized code");
 		}
 
-		private void SaveToDatabase(IEnumerable<long> values, DbCommand command, bool removeUnusedRows)
+		private void SaveToDatabase(IEnumerable<long> values, DbConnection connection, bool removeUnusedRows)
 		{
-			DbCommandBuilder builder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(command);
+			DbCommandBuilder builder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(connection);
 
 			var dataSet = new DataSet();
 			builder.DataAdapter.Fill(dataSet);
