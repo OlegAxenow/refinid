@@ -53,6 +53,7 @@ You can take a look on code from unit-test to see how to use it:
 *DefaultLongIdFactory* provides Create method to retrieve new identifier for specified entity type. This factory (surprise!) is thread-safe.
 
 Two things are not trivial, let me explain it:
+
 1. It uses simple Dictionary, because all writing to dictionary performed inside the constructor.
 2. It uses private IdWrapper class. If we use long without wrapper, we cannot use *ref* for *Interlocked.Increment(ref long)*.
 
