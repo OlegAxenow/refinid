@@ -54,8 +54,8 @@ You can take a look on code from unit-test to see how to use it:
 
 Two things are not trivial, let me explain it:
 
-1. It uses simple Dictionary, because all writing to dictionary performed inside the constructor.
-2. It uses private IdWrapper class. If we use long without wrapper, we cannot use *ref* for *Interlocked.Increment(ref long)*.
+1. It uses simple *Dictionary*, because all writing to dictionary performed inside the constructor.
+2. It uses private *IdWrapper* class. If we use *long* without wrapper, we cannot use *ref* for *Interlocked.Increment(ref long)*.
 
 
 ## Requirements and dependencies
