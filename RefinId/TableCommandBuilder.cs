@@ -64,7 +64,7 @@ namespace RefinId
 		///     This table should contains (TypeId not null, Id not null, TableName null)
 		///     columns with <see cref="short" />,
 		///     <see cref="long" /> and <see cref="string" /> types respectively.
-		///     "TypeId" column is redundant, but needed because of limited <see cref="DbProviderFactory" /> API.
+		///     "TypeId" column is redundant, but needed because of limited <see cref="DbProviderFactory" /> API (to avoid to use bit shift).
 		/// </param>
 		/// <param name="providerName">
 		///     Provider name to instantiate <see cref="DbProviderFactory" />.

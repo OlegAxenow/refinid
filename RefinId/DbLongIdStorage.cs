@@ -8,7 +8,7 @@ namespace RefinId
 	/// <summary>
 	///     Uses table in database to store last identifiers.
 	/// </summary>
-	/// <remarks>By default, expects table _longIds(id as long).</remarks>
+	/// <remarks>By default, expects table _longIds(Id as long).</remarks>
 	public class DbLongIdStorage : ILongIdStorage
 	{
 		private readonly TableCommandBuilder _tableCommandBuilder;
