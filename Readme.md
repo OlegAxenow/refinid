@@ -24,10 +24,10 @@ TBD (building, NuGet)
 
 For simple situation you can use something like this:
 
-	var installer = new SqlClientLongIdInstaller(connectionString,	new UniqueKeysProvider());
+	var installer = new SqlClientLongIdInstaller(connnString, new UniqueKeysProvider());
 	installer.Install(0, 0, false, new Table(1, "Test1"), new Table(2, "TestId2"));
 	...
-	var storage = new DbLongIdStorage(connectionString);
+	var storage = new DbLongIdStorage(connString);
 	var factory = new DefaultLongIdFactory(storage);
 	...
 	short type = 1;
@@ -40,6 +40,7 @@ For simple situation you can use something like this:
 I decide that for my goals 8-byte structure with LayoutKind.Explicit will be good enough to hold Value, Type and Shard fields. Also I reserved single byte for future use (e.g. for extending one of other fields).
 Then, I wrote implicit operators to convert to and from long (and trivial Equals and GetHashCode implementation).
 You can take a look on code from unit-test to see how to use it:
+	
 	LongId id = 0x1FEECCBB44332211;
 
 	Assert.That(id.Value, Is.EqualTo(0x44332211));
