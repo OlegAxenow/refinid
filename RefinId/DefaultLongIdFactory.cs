@@ -68,7 +68,7 @@ namespace RefinId
 		}
 
 		/// <summary>
-		///     Wraps <see cref="long" /> to alow to use <see cref="Interlocked" />
+		///     Wraps <see cref="long" /> to allow to use <see cref="Interlocked" />
 		///     for <see cref="Dictionary{TKey,TValue}" /> values.
 		/// </summary>
 		private class IdWrapper

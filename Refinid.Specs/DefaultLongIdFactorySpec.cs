@@ -30,23 +30,23 @@ namespace Refinid.Specs
 		public void Create_should_increment_value()
 		{
 			// arrange
-			const long initialValue = 0x0101AABB01010101;
-			var storage = new TestStorage(initialValue);
+			const long InitialValue = 0x0101AABB01010101;
+			var storage = new TestStorage(InitialValue);
 			var factory = new DefaultLongIdFactory(storage);
 
 			// act + assert
-			Assert.That(() => factory.Create(0x0101), Is.EqualTo(initialValue + 1));
-			Assert.That(() => factory.Create(0x0101), Is.EqualTo(initialValue + 2));
+			Assert.That(() => factory.Create(0x0101), Is.EqualTo(InitialValue + 1));
+			Assert.That(() => factory.Create(0x0101), Is.EqualTo(InitialValue + 2));
 		}
 
 		[Test]
 		public void Create_should_not_produce_exact_number_of_different_values_in_different_threads()
 		{
 			// arrange
-			const int times = 100;
-			const long initialValue = 0x0101AABB01010101;
+			const int Times = 100;
+			const long InitialValue = 0x0101AABB01010101;
 
-			var storage = new TestStorage(initialValue);
+			var storage = new TestStorage(InitialValue);
 			var factory = new DefaultLongIdFactory(storage);
 
 			var queue = new ConcurrentQueue<long>();
@@ -58,8 +58,8 @@ namespace Refinid.Specs
 				queue.Enqueue(id);
 
 				Debug.WriteLine(id);
-				Assert.That(id, Is.GreaterThan(initialValue));
-			}).Run(times, 0);
+				Assert.That(id, Is.GreaterThan(InitialValue));
+			}).Run(Times, 0);
 
 			// assert
 			var allIds = new HashSet<long>();
@@ -73,8 +73,8 @@ namespace Refinid.Specs
 					maxResult = result;
 			}
 
-			Assert.That(allIds.Count, Is.EqualTo(times));
-			Assert.That(maxResult - initialValue, Is.EqualTo(times));
+			Assert.That(allIds.Count, Is.EqualTo(Times));
+			Assert.That(maxResult - InitialValue, Is.EqualTo(Times));
 		}
 	}
 }

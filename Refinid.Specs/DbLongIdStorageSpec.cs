@@ -56,9 +56,9 @@ namespace Refinid.Specs
 		public void Saved_should_reject_non_unique_types()
 		{
 			// arrange
-			const long newId1 = 0x1FEECCBB44332211;
-			const long newId2 = 0x3FEECCBB44332211;
-			var valuesWithNonUniqueTypes = new[] { newId1 + 1, newId2 + 2, newId1 + 3 };
+			const long NewId1 = 0x1FEECCBB44332211;
+			const long NewId2 = 0x3FEECCBB44332211;
+			var valuesWithNonUniqueTypes = new[] { NewId1 + 1, NewId2 + 2, NewId1 + 3 };
 
 			var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
@@ -81,14 +81,14 @@ namespace Refinid.Specs
 		public void Values_should_be_loaded_from_database()
 		{
 			// arrange
-			const long initialId1 = 0x1FEECCBB44332211;
-			const long initialId2 = 0x2FEECCBB44332211;
+			const long InitialId1 = 0x1FEECCBB44332211;
+			const long InitialId2 = 0x2FEECCBB44332211;
 
 			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
-				InsertInitialId(command, TableName, initialId1, "fake_table", "fake_id");
-				InsertInitialId(command, TableName, initialId2, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, InitialId1, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, InitialId2, "fake_table", "fake_id");
 
 				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
@@ -96,7 +96,7 @@ namespace Refinid.Specs
 				List<long> lastValues = storage.GetLastValues();
 
 				// assert
-				Assert.That(lastValues, Is.EquivalentTo(new[] { initialId1, initialId2 }));
+				Assert.That(lastValues, Is.EquivalentTo(new[] { InitialId1, InitialId2 }));
 
 				// cleanup
 				command.Run("DELETE FROM " + TableName);
@@ -107,25 +107,25 @@ namespace Refinid.Specs
 		public void Values_should_be_saved_to_database()
 		{
 			// arrange
-			const long initialId1 = 0x1FEECCBB44332211; // update
-			const long initialId2 = 0x2FEECCBB44332211; // delete
-			const long newId3 = 0x3FEECCBB44332211; // insert
+			const long InitialId1 = 0x1FEECCBB44332211; // update
+			const long InitialId2 = 0x2FEECCBB44332211; // delete
+			const long NewId3 = 0x3FEECCBB44332211; // insert
 
 			using (SqlConnection connection = ConnectionHelper.CreateConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
-				InsertInitialId(command, TableName, initialId1, "fake_table", "fake_id");
-				InsertInitialId(command, TableName, initialId2, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, InitialId1, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, InitialId2, "fake_table", "fake_id");
 
 				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString);
 
 				// act
-				storage.SaveLastValues(new[] { initialId1 + 1, newId3 + 3 });
+				storage.SaveLastValues(new[] { InitialId1 + 1, NewId3 + 3 });
 				// TODO: to better isolation use direct reading from database instead of storage
 				List<long> lastValues = storage.GetLastValues();
 
 				// assert
-				Assert.That(lastValues, Is.EquivalentTo(new[] { initialId1 + 1, newId3 + 3 }));
+				Assert.That(lastValues, Is.EquivalentTo(new[] { InitialId1 + 1, NewId3 + 3 }));
 
 				// cleanup
 				command.Run("DELETE FROM " + TableName);

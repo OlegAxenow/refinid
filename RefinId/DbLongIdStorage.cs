@@ -17,7 +17,7 @@ namespace RefinId
 		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
-		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
+		/// <param name="tableName"> See <see cref="TableCommandBuilder.TableName" /> for details.</param>
 		/// <param name="providerName"> See <see cref="TableCommandBuilder" /> for details.</param>
 		public DbLongIdStorage(string connectionString, string tableName = null, string providerName = null)
 		{
@@ -63,18 +63,19 @@ namespace RefinId
 			{
 				while (reader.Read())
 				{
-					const int idOrdinal = 1;
-					const int typeOrdinal = 0;
+					const int IdOrdinal = 1;
+					const int TypeOrdinal = 0;
 
-					var id = (LongId)reader.GetInt64(idOrdinal);
-					if (reader.GetInt16(typeOrdinal) != id.Type)
+					var id = (LongId)reader.GetInt64(IdOrdinal);
+					if (reader.GetInt16(TypeOrdinal) != id.Type)
 						throw new InvalidOperationException(
 							string.Format("Type for id {0} should be {1} but equals to {2}.",
-								id, id.Type, reader.GetInt16(typeOrdinal)));
+								id, id.Type, reader.GetInt16(TypeOrdinal)));
 
 					result.Add(id);
 				}
 			}
+
 			return result;
 		}
 
@@ -100,10 +101,12 @@ namespace RefinId
 		{
 			SaveLastValues(new[] { value }, false);
 			throw new NotImplementedException("Should be replaced by optimized code");
+			// TODO: use hangfire (optional)
 		}
 
 		private void SaveToDatabase(IEnumerable<long> values, DbConnection connection, bool removeUnusedRows)
 		{
+			// TODO: add/check filter for last value (assert that nobody updates storage without us), may be use SQL (instead of DataSet)
 			DbCommandBuilder builder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(connection);
 
 			var dataSet = new DataSet();
@@ -149,6 +152,7 @@ namespace RefinId
 					table.Rows.Add(row);
 					row[TableCommandBuilder.TypeColumnName] = id.Type;
 				}
+
 				row[TableCommandBuilder.IdColumnName] = id.Value;
 			}
 
@@ -174,6 +178,7 @@ namespace RefinId
 				LongId id = Convert.ToInt64(row[TableCommandBuilder.IdColumnName]);
 				tableIdMapByType.Add(id.Type, row);
 			}
+
 			return tableIdMapByType;
 		}
 

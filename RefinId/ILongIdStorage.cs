@@ -16,7 +16,7 @@ namespace RefinId
 	///         </item>
 	///         <item>
 	///             <description>
-	///                 Stores last values preiodically with <see cref="SaveLastValues" /> and
+	///                 Stores last values periodically with <see cref="SaveLastValues" /> and
 	///                 retrieves after restart with <see cref="GetLastValues" /> parameter depending on situation
 	///                 (<b>true</b> for maximum durability, <b>false</b> when expect that no new objects added).
 	///             </description>

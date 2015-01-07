@@ -14,23 +14,23 @@ namespace RefinId
 		/// <summary>
 		///     Name of the identifier column in <see cref="DbLongIdStorage.TableName" />.
 		/// </summary>
-		public const string IdColumnName = "id";
+		public const string IdColumnName = "Id";
 
 		/// <summary>
 		///     Name of the type column in <see cref="DbLongIdStorage.TableName" />.
 		/// </summary>
-		public const string TypeColumnName = "typeid";
+		public const string TypeColumnName = "TypeId";
 
 		/// <summary>
 		///     Name of the column with table name for type,
 		///     specified by <see cref="TypeColumnName" /> in <see cref="DbLongIdStorage.TableName" />.
 		/// </summary>
-		public const string TableNameColumnName = "tablename";
+		public const string TableNameColumnName = "TableName";
 
 		/// <summary>
 		///     Name of the column with key column name from referenced table in <see cref="DbLongIdStorage.TableName" />.
 		/// </summary>
-		public const string KeyColumnName = "keyname";
+		public const string KeyColumnName = "KeyName";
 
 		/// <summary>
 		///     Default name of the table with information about last identifiers and types.
@@ -61,10 +61,10 @@ namespace RefinId
 		/// <param name="tableName">
 		///     Name of the table with information about last identifiers and types.
 		///     <see cref="DefaultTableName" /> if not specified.
-		///     This table should contains (typeid not null, id not null, tablename null)
+		///     This table should contains (TypeId not null, Id not null, TableName null)
 		///     columns with <see cref="short" />,
 		///     <see cref="long" /> and <see cref="string" /> types respectively.
-		///     "typeid" column is redundant, but needed because of limited <see cref="DbProviderFactory" /> API.
+		///     "TypeId" column is redundant, but needed because of limited <see cref="DbProviderFactory" /> API.
 		/// </param>
 		/// <param name="providerName">
 		///     Provider name to instantiate <see cref="DbProviderFactory" />.
@@ -158,12 +158,12 @@ namespace RefinId
 			DbCommandBuilder builder = _factory.CreateCommandBuilder();
 			if (builder == null)
 				throw new InvalidOperationException(
-					String.Format("Factory {0} does not support command builders.", _factory.GetType().Name));
+					string.Format("Factory {0} does not support command builders.", _factory.GetType().Name));
 
 			builder.DataAdapter = _factory.CreateDataAdapter();
 			if (builder.DataAdapter == null)
 				throw new InvalidOperationException(
-					String.Format("Factory {0} does not support data adapters.", _factory.GetType().Name));
+					string.Format("Factory {0} does not support data adapters.", _factory.GetType().Name));
 
 			builder.DataAdapter.SelectCommand = command;
 			return builder;
@@ -192,8 +192,10 @@ namespace RefinId
 				catch
 				{
 				}
+
 				throw;
 			}
+
 			return connection;
 		}
 

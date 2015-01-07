@@ -39,7 +39,7 @@ namespace Refinid.Specs
 			{
 				tasks[i] = Task.Factory.StartNew(MultiThreadedWorker);
 				if (i < times - 1)
-					Thread.Sleep(Convert.ToInt32((0.5 + random.NextDouble())*millisecondsAverageDelay));
+					Thread.Sleep(Convert.ToInt32((0.5 + random.NextDouble()) * millisecondsAverageDelay));
 			}
 
 			Task.WaitAll(tasks, millisecondsTimeout);

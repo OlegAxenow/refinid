@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace RefinId
 {
@@ -36,6 +37,7 @@ namespace RefinId
 		/// <summary>
 		///     Unquoted table's schema ("dbo", by default).
 		/// </summary>
+		[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
 		public string Schema { get; private set; }
 
 		/// <summary>

@@ -21,12 +21,19 @@ namespace RefinId.InformationSchema
  group by tc.CONSTRAINT_TYPE, kcu.TABLE_SCHEMA, kcu.TABLE_NAME, kcu.COLUMN_NAME) t
  join INFORMATION_SCHEMA.COLUMNS as c 
 	on c.TABLE_SCHEMA = t.SchemaName and c.TABLE_NAME = t.TableName and c.COLUMN_NAME = t.ColumnName";
+
 		private const string PrimaryKeyConstraintType = "PRIMARY KEY";
+
 		private const int SchemaOrdinal = 0;
+
 		private const int TableNameOrdinal = 1;
+
 		private const int ColumnNameOrdinal = 2;
+
 		private const int ConstraintTypeOrdinal = 3;
+
 		private const int ColumnCountOrdinal = 4;
+
 		private const int DataTypeOrdinal = 5;
 
 		/// <summary>

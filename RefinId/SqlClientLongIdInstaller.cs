@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using RefinId.InformationSchema;
@@ -15,6 +16,7 @@ namespace RefinId
 	/// <remarks>
 	///     Configuration table stores information about last identifiers and types for each configured table.
 	/// </remarks>
+	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
 	public class SqlClientLongIdInstaller
 	{
 		private const string LongDbDataType = "bigint";
@@ -26,7 +28,7 @@ namespace RefinId
 		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
-		/// <param name="keysProvider"></param>
+		/// <param name="keysProvider"> <see cref="IUniqueKeysProvider"/> instance to retrieve unique keys from storage.</param>
 		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
 		public SqlClientLongIdInstaller(string connectionString, IUniqueKeysProvider keysProvider, string tableName = null)
 		{
@@ -107,12 +109,12 @@ namespace RefinId
 			{
 				string fullTableName = GetFullTableName(commandBuilder, table);
 
-				// TODO: when table.KeyColumnName specified use ColumnsProvider.GetLongColums to find long identifier regardless unique or primary keys
+				// TODO: when table.KeyColumnName specified use ColumnsProvider.GetLongColumns to find long identifier regardless unique or primary keys
 				string targetColumnName = GetTargetColumnNameFromUniqueKeys(fullTableName, table, useUniqueIfPrimaryKeyNotMatch, keys);
 
 				command.Parameters[GetParameterName(TableCommandBuilder.TypeColumnName)].Value = table.TypeId;
 				command.Parameters[GetParameterName(TableCommandBuilder.IdColumnName)].Value = 
-					(long) new LongId(table.TypeId, shard, reserved, 0);
+					(long)new LongId(table.TypeId, shard, reserved, 0);
 				command.Parameters[GetParameterName(TableCommandBuilder.TableNameColumnName)].Value = table.TableName;
 				command.Parameters[GetParameterName(TableCommandBuilder.KeyColumnName)].Value = targetColumnName;
 
