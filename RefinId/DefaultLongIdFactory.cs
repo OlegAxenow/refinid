@@ -15,6 +15,9 @@ namespace RefinId
 		/// <summary>
 		///     Stores last values.
 		/// </summary>
+		/// <remarks>
+		///		Simple <see cref="Dictionary{TKey,TValue}"/>, because all writing to dictionary performed inside the constructor.
+		/// </remarks>
 		private readonly Dictionary<short, IdWrapper> _lastValues;
 
 		/// <summary>
@@ -71,6 +74,9 @@ namespace RefinId
 		///     Wraps <see cref="long" /> to allow to use <see cref="Interlocked" />
 		///     for <see cref="Dictionary{TKey,TValue}" /> values.
 		/// </summary>
+		/// <remarks>
+		///		If we use long without wrapper, we cannot use "ref" for <see cref="Interlocked.Increment(ref long)"/>.
+		/// </remarks>
 		private class IdWrapper
 		{
 			public long Id;

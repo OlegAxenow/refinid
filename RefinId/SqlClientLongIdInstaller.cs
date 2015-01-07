@@ -15,7 +15,9 @@ namespace RefinId
 	/// </summary>
 	/// <remarks>
 	///     Configuration table stores information about last identifiers and types for each configured table.
+	///		We cannot use generic installer because of absense generic API for table creation.
 	/// </remarks>
+	// TODO: try to use a way to write generic installer for ANSI SQL (check using bigint, replace sysname).
 	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
 	public class SqlClientLongIdInstaller
 	{

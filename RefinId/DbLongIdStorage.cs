@@ -153,7 +153,7 @@ namespace RefinId
 					row[TableCommandBuilder.TypeColumnName] = id.Type;
 				}
 
-				row[TableCommandBuilder.IdColumnName] = id.Value;
+				row[TableCommandBuilder.IdColumnName] = id.Data;
 			}
 
 			if (removeUnusedRows)
