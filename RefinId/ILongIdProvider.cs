@@ -1,9 +1,9 @@
 ﻿namespace RefinId
 {
 	/// <summary>
-	///     Provides factory to create <see cref="LongId" />.
+	///     Provides methods to create <see cref="LongId" /> and flush all data to storage.
 	/// </summary>
-	public interface ILongIdFactory
+	public interface ILongIdProvider
 	{
 		/// <summary>
 		///     Creates new unique sequential <see cref="LongId" /> with <see cref="LongId.Type" />,

@@ -22,17 +22,13 @@ TBD (building, NuGet)
 
 ### How to use
 
-For simple situation you can use something like this:
+For simple situation (default implemenations) you can use something like this:
 
-	var installer = new DefaultLongIdInstaller(connnString, new UniqueKeysProvider(), 
-		"System.Data.SQLite");
-	installer.Install(0, 0, false, new Table(1, "Test1"), new Table(2, "TestId2"));
-	...
-	var storage = new DbLongIdStorage(connString, "System.Data.SQLite");
-	var factory = new DefaultLongIdFactory(storage);
+	var defaultHelper = new DefaultHelper(connnString, "System.Data.SqlClient");
+	defaultHelper.Install(0, 0, false, new Table(1, "Test1"), new Table(2, "TestId2"));
 	...
 	short type = 1;
-	long id = factory.Create(type);
+	long id = defaultHelper.GetProvider().Create(type);
 
 ## How it works
 

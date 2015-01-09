@@ -39,13 +39,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DbCommandExtensions.cs" />
+    <Compile Include="DefaultHelper.cs" />
     <Compile Include="InformationSchema\IUniqueKeysProvider.cs" />
     <Compile Include="InformationSchema\UniqueKey.cs" />
     <Compile Include="InformationSchema\UniqueKeysProvider.cs" />
     <Compile Include="ISchemaAndTable.cs" />
     <Compile Include="DefaultLongIdInstaller.cs" />
-    <Compile Include="DefaultLongIdFactory.cs" />
-    <Compile Include="ILongIdFactory.cs" />
+    <Compile Include="DefaultLongIdProvider.cs" />
+    <Compile Include="ILongIdProvider.cs" />
     <Compile Include="ILongIdStorage.cs" />
     <Compile Include="..\..\LongId.cs">
       <Link>LongId.cs</Link>

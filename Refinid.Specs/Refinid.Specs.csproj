@@ -52,7 +52,7 @@
   <ItemGroup>
     <Compile Include="ConnectionHelper.cs" />
     <Compile Include="DbLongIdStorageSpec.cs" />
-    <Compile Include="DefaultLongIdFactorySpec.cs" />
+    <Compile Include="DefaultLongIdProviderSpec.cs" />
     <Compile Include="LongIdSpec.cs" />
     <Compile Include="MultiThreadTestRunner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

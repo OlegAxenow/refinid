@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace RefinId.InformationSchema
 {
 	/// <summary>
-	///     Provides information about primary keys.
+	///     Provides information about primary and uniqu keys from INFORMATION_SCHEMA views.
 	/// </summary>
+	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
 	public class UniqueKeysProvider : IUniqueKeysProvider
 	{
 		private const string UniqueKeysCommandText = @"select t.*, c.DATA_TYPE as DataType from

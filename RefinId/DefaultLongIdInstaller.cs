@@ -26,12 +26,15 @@ namespace RefinId
 		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
-		/// <param name="keysProvider"> <see cref="IUniqueKeysProvider"/> instance to retrieve unique keys from storage.</param>
+		/// <param name="keysProvider"> <see cref="IUniqueKeysProvider"/> to retrieve unique keys from storage.</param>
 		/// <param name="dbProviderName"> Name of the database provider for <see cref="DbProviderFactories.GetFactory(string)"/>.</param>
 		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
 		public DefaultLongIdInstaller(string connectionString, IUniqueKeysProvider keysProvider, string dbProviderName, string tableName = null)
 		{
+			if (connectionString == null) throw new ArgumentNullException("connectionString");
 			if (keysProvider == null) throw new ArgumentNullException("keysProvider");
+			if (dbProviderName == null) throw new ArgumentNullException("dbProviderName");
+
 			_keysProvider = keysProvider;
 			_tableCommandBuilder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
 		}

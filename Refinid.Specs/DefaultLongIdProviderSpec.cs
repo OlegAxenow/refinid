@@ -8,7 +8,7 @@ using RefinId;
 namespace Refinid.Specs
 {
 	[TestFixture]
-	public class DefaultLongIdFactorySpec
+	public class DefaultLongIdProviderSpec
 	{
 		[TestCase(0x0101AABB01010101, 0x0001AABB01010101, 0x0F01AABB01010101, 0x0201AABB01010101)]
 		[TestCase(new[] { 0x0101AABB01010101L })]
@@ -19,8 +19,8 @@ namespace Refinid.Specs
 			var storage = new TestStorage(values.ToArray());
 
 			// act
-			var factory = new DefaultLongIdFactory(storage);
-			factory.FlushToStorage();
+			var provider = new DefaultLongIdProvider(storage);
+			provider.FlushToStorage();
 
 			// assert
 			Assert.That(storage.Values, Is.EquivalentTo(values));
@@ -32,11 +32,11 @@ namespace Refinid.Specs
 			// arrange
 			const long InitialValue = 0x0101AABB01010101;
 			var storage = new TestStorage(InitialValue);
-			var factory = new DefaultLongIdFactory(storage);
+			var provider = new DefaultLongIdProvider(storage);
 
 			// act + assert
-			Assert.That(() => factory.Create(0x0101), Is.EqualTo(InitialValue + 1));
-			Assert.That(() => factory.Create(0x0101), Is.EqualTo(InitialValue + 2));
+			Assert.That(() => provider.Create(0x0101), Is.EqualTo(InitialValue + 1));
+			Assert.That(() => provider.Create(0x0101), Is.EqualTo(InitialValue + 2));
 		}
 
 		[Test]
@@ -47,14 +47,14 @@ namespace Refinid.Specs
 			const long InitialValue = 0x0101AABB01010101;
 
 			var storage = new TestStorage(InitialValue);
-			var factory = new DefaultLongIdFactory(storage);
+			var provider = new DefaultLongIdProvider(storage);
 
 			var queue = new ConcurrentQueue<long>();
 
 			// act
 			new MultiThreadTestRunner(() =>
 			{
-				long id = factory.Create(0x0101);
+				long id = provider.Create(0x0101);
 				queue.Enqueue(id);
 
 				Debug.WriteLine(id);

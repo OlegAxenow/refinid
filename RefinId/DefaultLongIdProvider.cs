@@ -6,11 +6,11 @@ using System.Threading;
 namespace RefinId
 {
 	/// <summary>
-	///     Default, thread-safe implementation of <see cref="ILongIdFactory" />.
-	///     NB: If you add new type, factory should be recreated
+	///     Default, thread-safe implementation of <see cref="ILongIdProvider" />.
+	///     NB: If you add new type, provider should be recreated
 	///     (it is the price of lock-free reading inside this class).
 	/// </summary>
-	public class DefaultLongIdFactory : ILongIdFactory
+	public class DefaultLongIdProvider : ILongIdProvider
 	{
 		/// <summary>
 		///     Stores last values.
@@ -26,9 +26,9 @@ namespace RefinId
 		private readonly ILongIdStorage _storage;
 
 		/// <summary>
-		///     Initializes factory with <paramref name="storage" />.
+		///     Initializes provider with <paramref name="storage" />.
 		/// </summary>
-		public DefaultLongIdFactory(ILongIdStorage storage)
+		public DefaultLongIdProvider(ILongIdStorage storage)
 		{
 			if (storage == null) throw new ArgumentNullException("storage");
 			List<long> values = SafeGetLastValues(storage);
@@ -43,7 +43,7 @@ namespace RefinId
 		}
 
 		/// <summary>
-		///     <see cref="ILongIdFactory.Create" /> implementation.
+		///     <see cref="ILongIdProvider.Create" /> implementation.
 		/// </summary>
 		public long Create(short type)
 		{
@@ -51,7 +51,7 @@ namespace RefinId
 		}
 
 		/// <summary>
-		///     <see cref="ILongIdFactory.FlushToStorage" /> implementation.
+		///     <see cref="ILongIdProvider.FlushToStorage" /> implementation.
 		/// </summary>
 		public void FlushToStorage()
 		{
