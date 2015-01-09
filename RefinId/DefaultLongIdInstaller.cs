@@ -21,8 +21,7 @@ namespace RefinId
 		private const int SysNameSize = 128;
 		private readonly IUniqueKeysProvider _keysProvider;
 		private readonly TableCommandBuilder _tableCommandBuilder;
-		private readonly DbConnection _connection;
-
+		
 		/// <summary>
 		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>

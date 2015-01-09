@@ -10,7 +10,7 @@ namespace Refinid.Specs
 	public class DbLongIdStorageSpec
 	{
 		private const string DbProviderName = "System.Data.SQLite";
-		private const string TableName = "[" + TableCommandBuilder.DefaultTableName + "]";
+		private const string TableName = TableCommandBuilder.DefaultTableName;
 
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
@@ -38,7 +38,7 @@ namespace Refinid.Specs
 			if (lastIdentifiersTableName == null) throw new ArgumentNullException("lastIdentifiersTableName");
 			if (tableNameForType == null) throw new ArgumentNullException("tableNameForType");
 			command.Run("INSERT INTO " + lastIdentifiersTableName +
-			            "VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
+			            " VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
 			            tableNameForType + "', '" + keyColumnName + "')");
 		}
 

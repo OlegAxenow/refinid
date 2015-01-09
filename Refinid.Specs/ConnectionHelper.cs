@@ -7,7 +7,7 @@ namespace Refinid.Specs
 {
 	public static class ConnectionHelper
 	{
-		public const string ConnectionString = "URI=file::memory:";
+		public const string ConnectionString = "URI=file:memdb?mode=memory&cache=shared;Data Source=memdb;";
 
 		public static DbConnection CreateConnection()
 		{
@@ -18,9 +18,9 @@ namespace Refinid.Specs
 		{
 			object count;
 			if (command.GetType().Namespace == "System.Data.SQLite")
-				count = command.Run("SELECT count(*) FROM sqlite_master WHERE type = 'table' and name = '" + tableName + "'");
+				count = command.Run("SELECT count(*) FROM sqlite_master WHERE type = 'table' and name = '" + tableName + "'", true);
 			else
-				count = command.Run("SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '" + tableName + "'");
+				count = command.Run("SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '" + tableName + "'", true);
 			return count != null ? Convert.ToInt32(count) : 0;
 		}
 
