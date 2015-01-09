@@ -14,7 +14,7 @@ namespace RefinId
 		///     Opens <see cref="DbCommand.Connection" /> if necessary.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
-		public static void Run(this DbCommand command, string commandText)
+		public static object Run(this DbCommand command, string commandText, bool executeScalar = false)
 		{
 			if (command == null) throw new ArgumentNullException("command");
 			if (commandText == null) throw new ArgumentNullException("commandText");
@@ -24,7 +24,12 @@ namespace RefinId
 
 			command.CommandType = CommandType.Text;
 			command.CommandText = commandText;
+
+			if (executeScalar)
+				return command.ExecuteScalar();
+			
 			command.ExecuteNonQuery();
+			return null;
 		}
 	}
 }

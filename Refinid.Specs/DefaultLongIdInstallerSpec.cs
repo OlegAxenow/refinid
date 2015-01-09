@@ -6,27 +6,28 @@ using RefinId.InformationSchema;
 namespace Refinid.Specs
 {
 	[TestFixture]
-	public class SqlClientLongIdInstallerSpec
+	public class DefaultLongIdInstallerSpec
 	{
+		private const string DbProviderName = "System.Data.SQLite";
+
 		[Test]
 		public void Table_should_be_created()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString, new TestUniqueKeysProvider());
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString, new TestUniqueKeysProvider(), DbProviderName);
 			using (var connection = ConnectionHelper.CreateConnection())
 			{
+				connection.DropTableIfExists(installer.TableName);
 				var command = connection.CreateCommand();
-				command.Run("IF OBJECT_ID('" + installer.TableName + "') IS NOT NULL " +
-							" DROP TABLE " + installer.TableName);
-
+				
 				// act
 				installer.Install(0, 0, false, null);
 
 				// assert
-				command.CommandText = "SELECT OBJECT_ID('" + installer.TableName + "')";
+				command.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '" + installer.TableName + "'";
 				var result = command.ExecuteScalar();
 				Assert.That(result, Is.Not.Null);
-				Assert.That(Convert.ToInt64(result), Is.GreaterThan(0));
+				Assert.That(Convert.ToInt64(result), Is.EqualTo(1));
 			}
 		}
 
@@ -34,17 +35,18 @@ namespace Refinid.Specs
 		public void Specified_tables_should_be_appended_to_configuration()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString,
-				new UniqueKeysProvider());
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString,
+				new UniqueKeysProvider(), DbProviderName);
 			using (var connection = ConnectionHelper.CreateConnection())
 			{
 				var command = connection.CreateCommand();
-				var builder = new TableCommandBuilder(connection.ConnectionString);
+				var builder = new TableCommandBuilder(connection.ConnectionString, DbProviderName);
 				command.Run("IF OBJECT_ID('" + builder.TableName + "') IS NOT NULL DROP TABLE " + builder.TableName);
-				command.Run("IF OBJECT_ID('TestId1') IS NOT NULL DROP TABLE TestId1; " +
-							" CREATE TABLE TestId1 (Id bigint PRIMARY KEY, Name sysname);");
-				command.Run("IF OBJECT_ID('TestId2') IS NOT NULL DROP TABLE TestId2; " +
-							" CREATE TABLE TestId2 (TestId2Id bigint PRIMARY KEY, Name sysname);");
+				connection.DropTableIfExists(builder.TableName);
+				connection.DropTableIfExists("TestId1");
+				connection.DropTableIfExists("TestId2");
+				command.Run("CREATE TABLE TestId1 (Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
+				command.Run("CREATE TABLE TestId2 (TestId2Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
 				command.Run("INSERT TestId1 VALUES(123, 'Test')");
 				
 				// act
@@ -71,8 +73,8 @@ namespace Refinid.Specs
 		public void Tables_without_primary_keys_should_cause_errors()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString,
-				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", false, 1, "int")));
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString,
+				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", false, 1, "int")), DbProviderName);
 			
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
@@ -83,8 +85,8 @@ namespace Refinid.Specs
 		public void Tables_with_not_bigint_primary_keys_should_cause_errors()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString, 
-				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", true, 1, "int")));
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString,
+				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", true, 1, "int")), DbProviderName);
 			
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
@@ -95,7 +97,7 @@ namespace Refinid.Specs
 		public void Tables_with_no_keys_should_cause_errors()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString, new TestUniqueKeysProvider());
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString, new TestUniqueKeysProvider(), DbProviderName);
 
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
@@ -106,8 +108,8 @@ namespace Refinid.Specs
 		public void Tables_with_multiple_columns_key_should_cause_errors()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString,
-				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", true, 2, "bigint")));
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString,
+				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", true, 2, "bigint")), DbProviderName);
 
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
@@ -118,9 +120,9 @@ namespace Refinid.Specs
 		public void Tables_with_multiple_unique_keys_should_cause_errors()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString,
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString,
 				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", false, 1, "bigint"),
-					new UniqueKey("dbo", "TestId1", "Id2", false, 1, "bigint")));
+					new UniqueKey("dbo", "TestId1", "Id2", false, 1, "bigint")), DbProviderName);
 
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, true, new Table(0, "TestId1")),
@@ -131,8 +133,8 @@ namespace Refinid.Specs
 		public void Tables_with_no_matched_key_column_should_cause_errors()
 		{
 			// arrange
-			var installer = new SqlClientLongIdInstaller(ConnectionHelper.ConnectionString,
-				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", true, 1, "bigint")));
+			var installer = new DefaultLongIdInstaller(ConnectionHelper.ConnectionString,
+				new TestUniqueKeysProvider(new UniqueKey("dbo", "TestId1", "Id", true, 1, "bigint")), DbProviderName);
 
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1", keyColumnName: "TestId")),

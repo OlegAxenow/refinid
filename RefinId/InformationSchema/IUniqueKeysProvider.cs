@@ -8,6 +8,8 @@ namespace RefinId.InformationSchema
 	/// </summary>
 	public interface IUniqueKeysProvider
 	{
+		// TODO: add new provider with SQLite support
+
 		/// <summary>
 		///     Returns <see cref="UniqueKey" /> instances for all unique and primary key constraints for current database.
 		/// </summary>

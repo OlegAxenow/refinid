@@ -1,23 +1,34 @@
-﻿using System.Data.SqlClient;
+﻿using System;
+using System.Data.Common;
+using System.Data.SQLite;
 using RefinId;
 
 namespace Refinid.Specs
 {
-	public class ConnectionHelper
+	public static class ConnectionHelper
 	{
-		public const string ConnectionString =
-			"Server=(localdb)\\v11.0;Integrated Security=true;Database=" + TestDatabaseName;
+		public const string ConnectionString = "URI=file::memory:";
 
-		public const string TestDatabaseName = "RefineIdTest";
-
-		public static void UseTestDatabase(SqlCommand command)
+		public static DbConnection CreateConnection()
 		{
-			command.Run("USE " + TestDatabaseName);
+			return new SQLiteConnection(ConnectionString);
 		}
 
-		public static SqlConnection CreateConnection()
+		public static int GetTableCount(this DbCommand command, string tableName)
 		{
-			return new SqlConnection(ConnectionString);
+			object count;
+			if (command.GetType().Namespace == "System.Data.SQLite")
+				count = command.Run("SELECT count(*) FROM sqlite_master WHERE type = 'table' and name = '" + tableName + "'");
+			else
+				count = command.Run("SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '" + tableName + "'");
+			return count != null ? Convert.ToInt32(count) : 0;
+		}
+
+		public static void DropTableIfExists(this DbConnection connection, string tableName)
+		{
+			var command = connection.CreateCommand();
+			if (GetTableCount(command, tableName) == 1)
+				command.Run("DROP TABLE '" + tableName + "'");
 		}
 	}
 }

@@ -37,16 +37,6 @@ namespace RefinId
 		/// </summary>
 		public const string DefaultTableName = "_longIds";
 
-		/// <summary>
-		///     Default provider's invariant name.
-		/// </summary>
-		public const string DefaultProviderName = SqlProviderName;
-
-		/// <summary>
-		///     MS SQL provider's invariant name.
-		/// </summary>
-		public const string SqlProviderName = "System.Data.SqlClient";
-
 		private readonly string _connectionString;
 		private readonly DbProviderFactory _factory;
 		private readonly string _insertCommandPrefix;
@@ -55,9 +45,13 @@ namespace RefinId
 
 		/// <summary>
 		///     Initializes instance with specified parameters and checks <see cref="DbProviderFactory" />
-		///     creation for <paramref name="providerName" />.
+		///     creation for <paramref name="dbProviderName" />.
 		/// </summary>
 		/// <param name="connectionString"> Valid connection string to access a database.</param>
+		/// <param name="dbProviderName">
+		///     Provider name to instantiate <see cref="DbProviderFactory" />.
+		///     You can get it from config file (&lt;connectionStrings&gt; element).
+		/// </param>
 		/// <param name="tableName">
 		///     Name of the table with information about last identifiers and types.
 		///     <see cref="DefaultTableName" /> if not specified.
@@ -66,37 +60,32 @@ namespace RefinId
 		///     <see cref="long" /> and <see cref="string" /> types respectively.
 		///     "TypeId" column is redundant, but needed because of limited <see cref="DbProviderFactory" /> API (to avoid to use bit shift).
 		/// </param>
-		/// <param name="providerName">
-		///     Provider name to instantiate <see cref="DbProviderFactory" />.
-		///     <see cref="DefaultProviderName" /> if not specified.
-		///     You can get it from config file (&lt;connectionStrings&gt; element).
-		/// </param>
 		/// <exception cref="InvalidOperationException">
-		///     If <see cref="DbProviderFactory" /> for <paramref name="providerName" />
+		///     If <see cref="DbProviderFactory" /> for <paramref name="dbProviderName" />
 		///     cannot be obtained or cannot instantiate necessary classes.
 		/// </exception>
-		public TableCommandBuilder(string connectionString, string tableName = null, string providerName = null)
+		public TableCommandBuilder(string connectionString, string dbProviderName, string tableName = null)
 		{
-			if (providerName == null) providerName = DefaultProviderName;
-			if (tableName == null) tableName = DefaultTableName;
 			if (connectionString == null) throw new ArgumentNullException("connectionString");
-
+			if (dbProviderName == null) throw new ArgumentNullException("dbProviderName");
+			if (tableName == null) tableName = DefaultTableName;
+			
 			_connectionString = connectionString;
 
-			_factory = DbProviderFactories.GetFactory(providerName);
+			_factory = DbProviderFactories.GetFactory(dbProviderName);
 			if (_factory == null)
-				throw new InvalidOperationException("providerName");
+				throw new InvalidOperationException("dbProviderName");
 
 			_tableName = GetDbCommandBuilder().QuoteIdentifier(tableName);
 
 			var stringBuilder = new StringBuilder();
-			stringBuilder.Append("select ");
+			stringBuilder.Append("SELECT ");
 			AppendColumnList(stringBuilder);
-			stringBuilder.Append(" from ").Append(_tableName);
+			stringBuilder.Append(" FROM ").Append(_tableName);
 			_selectCommandText = stringBuilder.ToString();
 
 			stringBuilder.Length = 0;
-			stringBuilder.Append("insert into ").Append(_tableName).Append(" (");
+			stringBuilder.Append("INSERT INTO ").Append(_tableName).Append(" (");
 			AppendColumnList(stringBuilder);
 			stringBuilder.Append(") ");
 			_insertCommandPrefix = stringBuilder.ToString();
@@ -132,7 +121,7 @@ namespace RefinId
 		{
 			DbCommandBuilder dbCommandBuilder = _factory.CreateCommandBuilder();
 			if (dbCommandBuilder == null)
-				throw new InvalidOperationException("providerName");
+				throw new InvalidOperationException("dbProviderName");
 			return dbCommandBuilder;
 		}
 

@@ -43,7 +43,7 @@
     <Compile Include="InformationSchema\UniqueKey.cs" />
     <Compile Include="InformationSchema\UniqueKeysProvider.cs" />
     <Compile Include="ISchemaAndTable.cs" />
-    <Compile Include="SqlClientLongIdInstaller.cs" />
+    <Compile Include="DefaultLongIdInstaller.cs" />
     <Compile Include="DefaultLongIdFactory.cs" />
     <Compile Include="ILongIdFactory.cs" />
     <Compile Include="ILongIdStorage.cs" />

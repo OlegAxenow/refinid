@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using RefinId.InformationSchema;
@@ -11,33 +9,32 @@ using RefinId.InformationSchema;
 namespace RefinId
 {
 	/// <summary>
-	///     Installs <see cref="LongId" /> configuration for "System.Data.SqlClient" provider.
+	///     Installs <see cref="LongId" /> configuration for ANSI-compliant database provider.
 	/// </summary>
 	/// <remarks>
 	///     Configuration table stores information about last identifiers and types for each configured table.
-	///		We cannot use generic installer because of absense generic API for table creation.
+	///		If your database does compatible with some features used, you can write your own installer.
 	/// </remarks>
-	// TODO: try to use a way to write generic installer for ANSI SQL (check using bigint, replace sysname).
-	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
-	public class SqlClientLongIdInstaller
+	public class DefaultLongIdInstaller
 	{
-		private const string LongDbDataType = "bigint";
+		private const string LongDbDataType = "BIGINT";
 		private const int SysNameSize = 128;
 		private readonly IUniqueKeysProvider _keysProvider;
 		private readonly TableCommandBuilder _tableCommandBuilder;
+		private readonly DbConnection _connection;
 
 		/// <summary>
 		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
 		/// <param name="keysProvider"> <see cref="IUniqueKeysProvider"/> instance to retrieve unique keys from storage.</param>
+		/// <param name="dbProviderName"> Name of the database provider for <see cref="DbProviderFactories.GetFactory(string)"/>.</param>
 		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
-		public SqlClientLongIdInstaller(string connectionString, IUniqueKeysProvider keysProvider, string tableName = null)
+		public DefaultLongIdInstaller(string connectionString, IUniqueKeysProvider keysProvider, string dbProviderName, string tableName = null)
 		{
 			if (keysProvider == null) throw new ArgumentNullException("keysProvider");
 			_keysProvider = keysProvider;
-			_tableCommandBuilder = new TableCommandBuilder(connectionString, tableName,
-				TableCommandBuilder.SqlProviderName);
+			_tableCommandBuilder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
 		}
 
 		/// <summary>
@@ -57,10 +54,10 @@ namespace RefinId
 		/// <param name="tables"> Optional tables to be included into configuration.</param>
 		public void Install(byte shard, byte reserved, bool useUniqueIfPrimaryKeyNotMatch, params Table[] tables)
 		{
-			using (var connection = (SqlConnection)_tableCommandBuilder.OpenConnection())
+			using (var connection = _tableCommandBuilder.OpenConnection())
 			{
 				var commandBuilder = _tableCommandBuilder.GetDbCommandBuilder();
-				SqlCommand command = connection.CreateCommand();
+				DbCommand command = connection.CreateCommand();
 
 				var keys = new Dictionary<string, List<UniqueKey>>();
 				foreach (UniqueKey key in _keysProvider.GetUniqueKeys(command))
@@ -81,27 +78,43 @@ namespace RefinId
 			}
 		}
 
-		private void InsertConfiguration(bool useUniqueIfPrimaryKeyNotMatch, Table[] tables, SqlCommand command,
+		private void InsertConfiguration(bool useUniqueIfPrimaryKeyNotMatch, Table[] tables, DbCommand command,
 			DbCommandBuilder commandBuilder, Dictionary<string, List<UniqueKey>> keys, byte shard, byte reserved)
 		{
 			var insertBuilder = new StringBuilder();
 			insertBuilder.Append(_tableCommandBuilder.InsertCommandPrefix).Append(" VALUES (");
 
-			// add single bigint parameter
-			command.Parameters.Add(GetParameterName(TableCommandBuilder.IdColumnName), SqlDbType.BigInt);
-			command.Parameters.Add(GetParameterName(TableCommandBuilder.TypeColumnName), SqlDbType.SmallInt);
+			DbParameter id = null;
+			DbParameter type = null;
+			DbParameter tableName = null;
+			DbParameter key = null;
 
 			foreach (var columnName in TableCommandBuilder.GetColumnNames())
 			{
-				string parameterName = GetParameterName(columnName);
-				insertBuilder.Append(parameterName).Append(",");
+				DbParameter parameter;
+				switch (columnName)
+				{
+					case TableCommandBuilder.IdColumnName:
+						parameter = id = AddParameter(command, DbType.Int64);
+						break;
+					case TableCommandBuilder.TypeColumnName:
+						parameter = type = AddParameter(command, DbType.Int16);
+						break;
+					case TableCommandBuilder.TableNameColumnName:
+						parameter = tableName = AddParameter(command, DbType.String, SysNameSize);
+						break;
+					case TableCommandBuilder.KeyColumnName:
+						parameter = key = AddParameter(command, DbType.String, SysNameSize);
+						break;
+					default:
+						throw new InvalidOperationException(string.Format("Unknown column name '{0}'.", columnName));
+				}
 
-				// integer parameters already added
-				if (columnName == TableCommandBuilder.IdColumnName || columnName == TableCommandBuilder.TypeColumnName)
-					continue;
-
-				command.Parameters.Add(parameterName, SqlDbType.NVarChar, SysNameSize);
+				insertBuilder.Append(parameter.ParameterName).Append(",");
 			}
+
+			if (id == null || type == null || tableName == null || key == null)
+				throw new InvalidOperationException("Not all columns obtained from builder.");
 
 			// replace last ",' with ")"
 			insertBuilder[insertBuilder.Length - 1] = ')';
@@ -114,20 +127,25 @@ namespace RefinId
 				// TODO: when table.KeyColumnName specified use ColumnsProvider.GetLongColumns to find long identifier regardless unique or primary keys
 				string targetColumnName = GetTargetColumnNameFromUniqueKeys(fullTableName, table, useUniqueIfPrimaryKeyNotMatch, keys);
 
-				command.Parameters[GetParameterName(TableCommandBuilder.TypeColumnName)].Value = table.TypeId;
-				command.Parameters[GetParameterName(TableCommandBuilder.IdColumnName)].Value = 
-					(long)new LongId(table.TypeId, shard, reserved, 0);
-				command.Parameters[GetParameterName(TableCommandBuilder.TableNameColumnName)].Value = table.TableName;
-				command.Parameters[GetParameterName(TableCommandBuilder.KeyColumnName)].Value = targetColumnName;
+				type.Value = table.TypeId;
+				id.Value = (long)new LongId(table.TypeId, shard, reserved, 0);
+				tableName.Value = table.TableName;
+				key.Value = targetColumnName;
 
 				command.ExecuteNonQuery();
 				// TODO: update identifiers from real tables with storage
 			}
 		}
 
-		private static string GetParameterName(string columnName)
+		private static DbParameter AddParameter(DbCommand command, DbType dbType, int size = 0)
 		{
-			return "@" + columnName;
+			var parameter = command.CreateParameter();
+			parameter.DbType = dbType;
+			if (size > 0)
+				parameter.Size = size;
+
+			command.Parameters.Add(parameter);
+			return parameter;
 		}
 
 		private static string GetTargetColumnNameFromUniqueKeys(string fullTableName, Table table, bool useUniqueIfPrimaryKeyNotMatch, Dictionary<string, List<UniqueKey>> keys)
@@ -168,13 +186,13 @@ Use Table.KeyColumnName to specify desired column.", LongDbDataType, fullTableNa
 			return commandBuilder.QuoteIdentifier(table.Schema) + "." + commandBuilder.QuoteIdentifier(table.TableName);
 		}
 
-		private void RunTableCreation(SqlCommand command)
+		private void RunTableCreation(DbCommand command)
 		{
 			command.Run("IF OBJECT_ID('" + TableName + "') IS NULL " +
 			            "CREATE TABLE " + TableName + " (" + TableCommandBuilder.TypeColumnName +
-			            " smallint not null primary key, " + TableCommandBuilder.IdColumnName +
-			            " bigint not null, " + TableCommandBuilder.TableNameColumnName +
-			            " sysname null," + TableCommandBuilder.KeyColumnName + " sysname null)");
+			            " SMALLINT NOT NULL PRIMARY KEY, " + TableCommandBuilder.IdColumnName +
+			            " BIGINT NOT NULL, " + TableCommandBuilder.TableNameColumnName +
+						" NVARCHAR (" + SysNameSize + ") NULL," + TableCommandBuilder.KeyColumnName + " NVARCHAR (" + SysNameSize + ") NULL)");
 		}
 	}
 }

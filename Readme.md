@@ -24,10 +24,11 @@ TBD (building, NuGet)
 
 For simple situation you can use something like this:
 
-	var installer = new SqlClientLongIdInstaller(connnString, new UniqueKeysProvider());
+	var installer = new DefaultLongIdInstaller(connnString, new UniqueKeysProvider(), 
+		"System.Data.SQLite");
 	installer.Install(0, 0, false, new Table(1, "Test1"), new Table(2, "TestId2"));
 	...
-	var storage = new DbLongIdStorage(connString);
+	var storage = new DbLongIdStorage(connString, "System.Data.SQLite");
 	var factory = new DefaultLongIdFactory(storage);
 	...
 	short type = 1;
@@ -57,6 +58,13 @@ Two things are not trivial, let me explain it:
 1. It uses simple *Dictionary*, because all writing to dictionary performed inside the constructor.
 2. It uses private *IdWrapper* class. If we use *long* without wrapper, we cannot use *ref* for *Interlocked.Increment(ref long)*.
 
+### DefaultLongIdInstaller
+
+*DefaultLongIdInstaller* implements basic code to install LongId support into your database. This is necessary, because your database is a good place to store last inserted identifiers.
+
+If your database does compatible with some features used, you can write your own installer.
+I am using types [VARCHAR]( http://en.wikibooks.org/wiki/SQL_Dialects_Reference/Data_structure_definition/Data_types/Character_types) and [BIGINT and SMALLINT](http://en.wikibooks.org/wiki/SQL_Dialects_Reference/Data_structure_definition/Data_types/Numeric_types).
+
 
 ## Requirements and dependencies
 
@@ -64,5 +72,6 @@ License: [MIT](http://opensource.org/licenses/MIT).
 
 The source code depends on following NuGet packages:
 
-- NUnit (only for Refinid.Specs)
 - Moq (only for Refinid.Specs)
+- NUnit (only for Refinid.Specs)
+- System.Data.SQLite.Core (only for Refinid.Specs)
