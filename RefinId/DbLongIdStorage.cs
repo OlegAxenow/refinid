@@ -18,7 +18,7 @@ namespace RefinId
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details.</param>
 		/// <param name="dbProviderName"> See <see cref="TableCommandBuilder" /> constructor for details.</param>
-		/// <param name="tableName"> See <see cref="TableCommandBuilder.TableName" /> for details.</param>
+		/// <param name="tableName"> See <see cref="TableCommandBuilder.QuotedTableName" /> for details.</param>
 		public DbLongIdStorage(string connectionString, string dbProviderName, string tableName = null)
 		{
 			_tableCommandBuilder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
@@ -29,7 +29,7 @@ namespace RefinId
 		/// </summary>
 		public string TableName
 		{
-			get { return _tableCommandBuilder.TableName; }
+			get { return _tableCommandBuilder.QuotedTableName; }
 		}
 
 		/// <summary>

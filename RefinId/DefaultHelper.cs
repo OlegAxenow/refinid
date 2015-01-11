@@ -11,18 +11,18 @@ namespace RefinId
 		private readonly string _connectionString;
 		private readonly string _dbProviderName;
 		private readonly string _configurationTableName;
-		private readonly IUniqueKeysProvider _uniqueKeysProvider;
+		private readonly IDbMetadataProvider _dbMetadataProvider;
 		private readonly Lazy<DefaultLongIdProvider> _provider;
 
 		/// <summary>
 		/// Store parameters for future use.
 		/// </summary>
-		public DefaultHelper(string connectionString, string dbProviderName, string configurationTableName = null, IUniqueKeysProvider uniqueKeysProvider = null)
+		public DefaultHelper(string connectionString, string dbProviderName, string configurationTableName = null, IDbMetadataProvider dbMetadataProvider = null)
 		{
 			_connectionString = connectionString;
 			_dbProviderName = dbProviderName;
 			_configurationTableName = configurationTableName;
-			_uniqueKeysProvider = uniqueKeysProvider;
+			_dbMetadataProvider = dbMetadataProvider;
 
 			_provider = new Lazy<DefaultLongIdProvider>(() => new DefaultLongIdProvider(GetStorage()));
 		}
@@ -45,7 +45,7 @@ namespace RefinId
 		/// </summary>
 		public void Install(byte shard, byte reserved, bool useUniqueIfPrimaryKeyNotMatch, params Table[] tables)
 		{
-			var installer = new DefaultLongIdInstaller(_connectionString, _uniqueKeysProvider ?? new UniqueKeysProvider(),
+			var installer = new DefaultLongIdInstaller(_connectionString, _dbMetadataProvider ?? new DbMetadataProvider(),
 				_dbProviderName, _configurationTableName);
 			installer.Install(shard, reserved, useUniqueIfPrimaryKeyNotMatch, tables);
 		}

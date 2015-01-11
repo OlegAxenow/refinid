@@ -9,24 +9,21 @@ namespace RefinId
 	public class Table : ISchemaAndTable
 	{
 		/// <summary>
-		///     Default value for <see cref="Schema" />, if not specified in constructor.
-		/// </summary>
-		private const string DefaultSchema = "dbo";
-
-		/// <summary>
 		///     Creates instance with specified parameters.
 		/// </summary>
 		/// <param name="typeId"> Type's identifier for current table (corresponds to <see cref="LongId.Type" />.</param>
 		/// <param name="tableName"> Unquoted table's name.</param>
-		/// <param name="schema"> Unquoted table's schema (<see cref="DefaultSchema" />, by default).</param>
+		/// <param name="schema"> Unquoted table's schema.</param>
 		/// <param name="keyColumnName"> Optional unquoted key column's name.</param>
-		public Table(short typeId, string tableName, string schema = null, string keyColumnName = null)
+		public Table(short typeId, string tableName, string schema = "", string keyColumnName = null)
 		{
 			if (tableName == null) throw new ArgumentNullException("tableName");
+			if (schema == null) throw new ArgumentNullException("schema");
+
 			KeyColumnName = keyColumnName;
 			TypeId = typeId;
 			TableName = tableName;
-			Schema = schema ?? DefaultSchema;
+			Schema = schema;
 		}
 
 		/// <summary>

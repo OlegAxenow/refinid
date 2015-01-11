@@ -5,7 +5,7 @@ using RefinId;
 
 namespace Refinid.Specs
 {
-	public static class ConnectionHelper
+	public static class DbHelper
 	{
 		public const string ConnectionString = "URI=file:memdb?mode=memory&cache=shared;Data Source=memdb;";
 

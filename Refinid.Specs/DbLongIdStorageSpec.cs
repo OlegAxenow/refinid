@@ -7,26 +7,8 @@ using RefinId;
 namespace Refinid.Specs
 {
 	[TestFixture]
-	public class DbLongIdStorageSpec
+	public class DbLongIdStorageSpec : BaseStorageSpec
 	{
-		private const string DbProviderName = "System.Data.SQLite";
-		private const string TableName = TableCommandBuilder.DefaultTableName;
-
-		[TestFixtureSetUp]
-		public void TestFixtureSetUp()
-		{
-			using (DbConnection connection = ConnectionHelper.CreateConnection())
-			{
-				var command = connection.CreateCommand();
-
-				connection.DropTableIfExists(TableName);
-				command.Run("CREATE TABLE " + TableName + " (" + TableCommandBuilder.TypeColumnName +
-				            " SMALLINT NOT NULL PRIMARY KEY, " + TableCommandBuilder.IdColumnName +
-				            " BIGINT NOT NULL, " + TableCommandBuilder.TableNameColumnName +
-							" VARCHAR(128) NULL," + TableCommandBuilder.KeyColumnName + " VARCHAR(128) NULL)");
-			}
-		}
-
 		/// <summary>
 		///     Inserts <paramref name="initialId" /> into <paramref name="lastIdentifiersTableName" />.
 		/// </summary>
@@ -50,7 +32,7 @@ namespace Refinid.Specs
 			const long NewId2 = 0x3FEECCBB44332211;
 			var valuesWithNonUniqueTypes = new[] { NewId1 + 1, NewId2 + 2, NewId1 + 3 };
 
-			var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString, DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
 
 			// act + assert
 			Assert.That(() => storage.SaveLastValues(valuesWithNonUniqueTypes),
@@ -61,7 +43,7 @@ namespace Refinid.Specs
 		public void Saved_should_reject_null_values()
 		{
 			// arrange
-			var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString, DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
 
 			// act + assert
 			Assert.That(() => storage.SaveLastValues(null), Throws.InstanceOf<ArgumentNullException>());
@@ -74,13 +56,13 @@ namespace Refinid.Specs
 			const long InitialId1 = 0x1FEECCBB44332211;
 			const long InitialId2 = 0x2FEECCBB44332211;
 
-			using (DbConnection connection = ConnectionHelper.CreateConnection())
+			using (DbConnection connection = DbHelper.CreateConnection())
 			{
 				DbCommand command = connection.CreateCommand();
 				InsertInitialId(command, TableName, InitialId1, "fake_table", "fake_id");
 				InsertInitialId(command, TableName, InitialId2, "fake_table", "fake_id");
 
-				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString, DbProviderName);
+				var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
 
 				// act
 				List<long> lastValues = storage.GetLastValues();
@@ -101,13 +83,13 @@ namespace Refinid.Specs
 			const long InitialId2 = 0x2FEECCBB44332211; // delete
 			const long NewId3 = 0x3FEECCBB44332211; // insert
 
-			using (DbConnection connection = ConnectionHelper.CreateConnection())
+			using (DbConnection connection = DbHelper.CreateConnection())
 			{
 				DbCommand command = connection.CreateCommand();
 				InsertInitialId(command, TableName, InitialId1, "fake_table", "fake_id");
 				InsertInitialId(command, TableName, InitialId2, "fake_table", "fake_id");
 
-				var storage = new DbLongIdStorage(ConnectionHelper.ConnectionString, DbProviderName);
+				var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
 
 				// act
 				storage.SaveLastValues(new[] { InitialId1 + 1, NewId3 + 3 });

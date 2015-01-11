@@ -40,9 +40,10 @@
   <ItemGroup>
     <Compile Include="DbCommandExtensions.cs" />
     <Compile Include="DefaultHelper.cs" />
-    <Compile Include="InformationSchema\IUniqueKeysProvider.cs" />
-    <Compile Include="InformationSchema\UniqueKey.cs" />
-    <Compile Include="InformationSchema\UniqueKeysProvider.cs" />
+    <Compile Include="Metadata\IDbMetadataProvider.cs" />
+    <Compile Include="Metadata\SQLiteDbMetadataProvider.cs" />
+    <Compile Include="Metadata\UniqueKey.cs" />
+    <Compile Include="Metadata\DbMetadataProvider.cs" />
     <Compile Include="ISchemaAndTable.cs" />
     <Compile Include="DefaultLongIdInstaller.cs" />
     <Compile Include="DefaultLongIdProvider.cs" />

@@ -50,7 +50,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConnectionHelper.cs" />
+    <Compile Include="BaseStorageSpec.cs" />
+    <Compile Include="DbHelper.cs" />
     <Compile Include="DbLongIdStorageSpec.cs" />
     <Compile Include="DefaultLongIdProviderSpec.cs" />
     <Compile Include="LongIdSpec.cs" />
@@ -58,7 +59,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DefaultLongIdInstallerSpec.cs" />
     <Compile Include="TestStorage.cs" />
-    <Compile Include="TestUniqueKeysProvider.cs" />
+    <Compile Include="TestDbMetadataProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

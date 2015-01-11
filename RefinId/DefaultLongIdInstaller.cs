@@ -18,33 +18,26 @@ namespace RefinId
 	public class DefaultLongIdInstaller
 	{
 		private const string LongDbDataType = "BIGINT";
+
 		private const int SysNameSize = 128;
-		private readonly IUniqueKeysProvider _keysProvider;
+		private readonly IDbMetadataProvider _metadataProvider;
 		private readonly TableCommandBuilder _tableCommandBuilder;
 		
 		/// <summary>
 		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
 		/// </summary>
 		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
-		/// <param name="keysProvider"> <see cref="IUniqueKeysProvider"/> to retrieve unique keys from storage.</param>
+		/// <param name="metadataProvider"> <see cref="IDbMetadataProvider"/> to retrieve unique keys from storage.</param>
 		/// <param name="dbProviderName"> Name of the database provider for <see cref="DbProviderFactories.GetFactory(string)"/>.</param>
 		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
-		public DefaultLongIdInstaller(string connectionString, IUniqueKeysProvider keysProvider, string dbProviderName, string tableName = null)
+		public DefaultLongIdInstaller(string connectionString, IDbMetadataProvider metadataProvider, string dbProviderName, string tableName = null)
 		{
 			if (connectionString == null) throw new ArgumentNullException("connectionString");
-			if (keysProvider == null) throw new ArgumentNullException("keysProvider");
+			if (metadataProvider == null) throw new ArgumentNullException("metadataProvider");
 			if (dbProviderName == null) throw new ArgumentNullException("dbProviderName");
 
-			_keysProvider = keysProvider;
+			_metadataProvider = metadataProvider;
 			_tableCommandBuilder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
-		}
-
-		/// <summary>
-		///     Quoted table name for configuration.
-		/// </summary>
-		public string TableName
-		{
-			get { return _tableCommandBuilder.TableName; }
 		}
 
 		/// <summary>
@@ -62,7 +55,7 @@ namespace RefinId
 				DbCommand command = connection.CreateCommand();
 
 				var keys = new Dictionary<string, List<UniqueKey>>();
-				foreach (UniqueKey key in _keysProvider.GetUniqueKeys(command))
+				foreach (UniqueKey key in _metadataProvider.GetUniqueKeys(command, LongDbDataType))
 				{
 					if (!useUniqueIfPrimaryKeyNotMatch && !key.IsPrimaryKey) continue;
 					
@@ -97,16 +90,16 @@ namespace RefinId
 				switch (columnName)
 				{
 					case TableCommandBuilder.IdColumnName:
-						parameter = id = AddParameter(command, DbType.Int64);
+						parameter = id = AddParameter(command, DbType.Int64, "id");
 						break;
 					case TableCommandBuilder.TypeColumnName:
-						parameter = type = AddParameter(command, DbType.Int16);
+						parameter = type = AddParameter(command, DbType.Int16, "type");
 						break;
 					case TableCommandBuilder.TableNameColumnName:
-						parameter = tableName = AddParameter(command, DbType.String, SysNameSize);
+						parameter = tableName = AddParameter(command, DbType.String, "tableName", SysNameSize);
 						break;
 					case TableCommandBuilder.KeyColumnName:
-						parameter = key = AddParameter(command, DbType.String, SysNameSize);
+						parameter = key = AddParameter(command, DbType.String, "key", SysNameSize);
 						break;
 					default:
 						throw new InvalidOperationException(string.Format("Unknown column name '{0}'.", columnName));
@@ -139,9 +132,10 @@ namespace RefinId
 			}
 		}
 
-		private static DbParameter AddParameter(DbCommand command, DbType dbType, int size = 0)
+		private DbParameter AddParameter(DbCommand command, DbType dbType, string parameterName, int size = 0)
 		{
 			var parameter = command.CreateParameter();
+			parameter.ParameterName = _metadataProvider.GetParameterName(parameterName);
 			parameter.DbType = dbType;
 			if (size > 0)
 				parameter.Size = size;
@@ -156,9 +150,7 @@ namespace RefinId
 			if (!keys.TryGetValue(fullTableName, out list))
 				throw new ArgumentException(string.Format("No key constraint found for {0}.", fullTableName), "table");
 
-			var longSingleColumnKeys = list.Where(x => x.ColumnCount == 1 &&
-			                                           (x.IsPrimaryKey || useUniqueIfPrimaryKeyNotMatch) &&
-			                                           x.DataType.Equals(LongDbDataType, StringComparison.OrdinalIgnoreCase))
+			var longSingleColumnKeys = list.Where(x => (x.IsPrimaryKey || useUniqueIfPrimaryKeyNotMatch))
 				.OrderBy(x => !x.IsPrimaryKey)
 				.ToArray();
 
@@ -190,11 +182,11 @@ Use Table.KeyColumnName to specify desired column.", LongDbDataType, fullTableNa
 
 		private void RunTableCreation(DbCommand command)
 		{
-			command.Run("IF OBJECT_ID('" + TableName + "') IS NULL " +
-			            "CREATE TABLE " + TableName + " (" + TableCommandBuilder.TypeColumnName +
+			if (!_metadataProvider.TableExists(command, _tableCommandBuilder.TableName))
+			command.Run("CREATE TABLE " + _tableCommandBuilder.QuotedTableName + " (" + TableCommandBuilder.TypeColumnName +
 			            " SMALLINT NOT NULL PRIMARY KEY, " + TableCommandBuilder.IdColumnName +
 			            " BIGINT NOT NULL, " + TableCommandBuilder.TableNameColumnName +
-						" NVARCHAR (" + SysNameSize + ") NULL," + TableCommandBuilder.KeyColumnName + " NVARCHAR (" + SysNameSize + ") NULL)");
+						" VARCHAR (" + SysNameSize + ") NULL," + TableCommandBuilder.KeyColumnName + " VARCHAR (" + SysNameSize + ") NULL)");
 		}
 	}
 }

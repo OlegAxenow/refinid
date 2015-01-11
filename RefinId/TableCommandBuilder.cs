@@ -41,6 +41,7 @@ namespace RefinId
 		private readonly DbProviderFactory _factory;
 		private readonly string _insertCommandPrefix;
 		private readonly string _selectCommandText;
+		private readonly string _quotedTableName;
 		private readonly string _tableName;
 
 		/// <summary>
@@ -76,27 +77,36 @@ namespace RefinId
 			if (_factory == null)
 				throw new InvalidOperationException("dbProviderName");
 
-			_tableName = GetDbCommandBuilder().QuoteIdentifier(tableName);
+			_tableName = tableName;
+			_quotedTableName = GetDbCommandBuilder().QuoteIdentifier(tableName);
 
 			var stringBuilder = new StringBuilder();
 			stringBuilder.Append("SELECT ");
 			AppendColumnList(stringBuilder);
-			stringBuilder.Append(" FROM ").Append(_tableName);
+			stringBuilder.Append(" FROM ").Append(_quotedTableName);
 			_selectCommandText = stringBuilder.ToString();
 
 			stringBuilder.Length = 0;
-			stringBuilder.Append("INSERT INTO ").Append(_tableName).Append(" (");
+			stringBuilder.Append("INSERT INTO ").Append(_quotedTableName).Append(" (");
 			AppendColumnList(stringBuilder);
 			stringBuilder.Append(") ");
 			_insertCommandPrefix = stringBuilder.ToString();
 		}
 
 		/// <summary>
-		///     Name of the table with information about last identifiers and types.
+		/// Name of the table with information about last identifiers and types.
 		/// </summary>
 		public string TableName
 		{
 			get { return _tableName; }
+		}
+
+		/// <summary>
+		/// Quoted <see cref="TableName"/>.
+		/// </summary>
+		public string QuotedTableName
+		{
+			get { return _quotedTableName; }
 		}
 
 		/// <summary>
@@ -126,7 +136,7 @@ namespace RefinId
 		}
 
 		/// <summary>
-		///     Creates and initializes <see cref="DbCommand" /> for select statement from <see cref="TableName" />.
+		///     Creates and initializes <see cref="DbCommand" /> for select statement from <see cref="QuotedTableName" />.
 		/// </summary>
 		public DbCommand CreateSelectCommand(DbConnection connection)
 		{
