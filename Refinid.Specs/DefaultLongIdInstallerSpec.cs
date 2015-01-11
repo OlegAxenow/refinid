@@ -1,7 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 using RefinId;
-using RefinId.InformationSchema;
+using RefinId.Metadata;
 
 namespace Refinid.Specs
 {

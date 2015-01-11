@@ -1,5 +1,5 @@
 ﻿using System;
-using RefinId.InformationSchema;
+using RefinId.Metadata;
 
 namespace RefinId
 {

@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace RefinId.InformationSchema
+namespace RefinId.Metadata
 {
 	/// <summary>
 	///     Contains properties with information about primary keys.

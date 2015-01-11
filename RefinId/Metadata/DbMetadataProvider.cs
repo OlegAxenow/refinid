@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 
-namespace RefinId.InformationSchema
+namespace RefinId.Metadata
 {
 	/// <summary>
 	///     Provides information about primary and unique keys from INFORMATION_SCHEMA views.

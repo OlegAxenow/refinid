@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 
-namespace RefinId.InformationSchema
+namespace RefinId.Metadata
 {
 	/// <summary>
 	///     Provides information about tables, primary and unique keys.
@@ -26,6 +26,8 @@ namespace RefinId.InformationSchema
 		/// <summary>
 		/// Returns correctly formatted parameter name for specific database (e.g. name -> @name).
 		/// </summary>
+		/// <remarks>
+		/// <see cref="DbProviderFactories"/> does not provide necessary API for this.</remarks>
 		string GetParameterName(string invariantName);
 	}
 }

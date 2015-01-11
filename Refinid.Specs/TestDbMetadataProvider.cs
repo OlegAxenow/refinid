@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
-using RefinId.InformationSchema;
+using RefinId.Metadata;
 
 namespace Refinid.Specs
 {
