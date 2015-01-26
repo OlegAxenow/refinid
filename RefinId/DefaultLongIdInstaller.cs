@@ -128,7 +128,9 @@ namespace RefinId
 				key.Value = targetColumnName;
 
 				command.ExecuteNonQuery();
-				// TODO: update identifiers from real tables with storage
+				
+				/* TODO: update identifiers from real tables with storage and checks that LongId.Type matches 
+				 * may be additional options should be introduced */
 			}
 		}
 
@@ -177,6 +179,8 @@ Use Table.KeyColumnName to specify desired column.", LongDbDataType, fullTableNa
 
 		private static string GetFullTableName(DbCommandBuilder commandBuilder, ISchemaAndTable table)
 		{
+			if (string.IsNullOrEmpty(table.Schema))
+				return commandBuilder.QuoteIdentifier(table.TableName);
 			return commandBuilder.QuoteIdentifier(table.Schema) + "." + commandBuilder.QuoteIdentifier(table.TableName);
 		}
 

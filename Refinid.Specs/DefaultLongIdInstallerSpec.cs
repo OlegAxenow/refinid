@@ -30,6 +30,39 @@ namespace Refinid.Specs
 		}
 
 		[Test]
+		public void Last_id_should_be_loaded_from_table()
+		{
+			// arrange
+			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			using (var connection = DbHelper.CreateConnection())
+			{
+				var command = connection.CreateCommand();
+
+				connection.DropTableIfExists(TableName);
+				connection.DropTableIfExists("TestId1");
+				command.Run("CREATE TABLE TestId1 (Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
+				command.Run("INSERT INTO TestId1 VALUES(123, 'Test')");
+				
+				// act
+				installer.Install(0, 0, false, new Table(0, "TestId1"));
+
+				// assert
+				command.CommandText = "SELECT * FROM " + TableName;
+				using (var reader = command.ExecuteReader())
+				{
+					int tableNameOrdinal = reader.GetOrdinal(TableCommandBuilder.TableNameColumnName);
+					int idIndex = reader.GetOrdinal(TableCommandBuilder.IdColumnName);
+
+					Assert.That(reader.Read());
+					Assert.That(reader.GetString(tableNameOrdinal), Is.EqualTo("TestId1"));
+					Assert.That(reader.GetInt64(idIndex), Is.EqualTo(123));
+
+					Assert.That(!reader.Read());
+				}
+			}
+		}
+
+		[Test]
 		public void Specified_tables_should_be_appended_to_configuration()
 		{
 			// arrange
@@ -43,7 +76,6 @@ namespace Refinid.Specs
 				connection.DropTableIfExists("TestId2");
 				command.Run("CREATE TABLE TestId1 (Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
 				command.Run("CREATE TABLE TestId2 (TestId2Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
-				command.Run("INSERT INTO TestId1 VALUES(123, 'Test')");
 				
 				// act
 				installer.Install(0, 0, false, new Table(0, "TestId1"), new Table(1, "TestId2"));
@@ -52,13 +84,16 @@ namespace Refinid.Specs
 				command.CommandText = "SELECT * FROM " + TableName + " ORDER BY " + TableCommandBuilder.IdColumnName;
 				using (var reader = command.ExecuteReader())
 				{
-					int idIndex = reader.GetOrdinal(TableCommandBuilder.IdColumnName);
+					int tableNameOrdinal = reader.GetOrdinal(TableCommandBuilder.TableNameColumnName);
+					int keyNameOrdinal = reader.GetOrdinal(TableCommandBuilder.KeyColumnName);
 
 					Assert.That(reader.Read());
-					Assert.That(reader.GetInt64(idIndex), Is.EqualTo(123));
+					Assert.That(reader.GetString(tableNameOrdinal), Is.EqualTo("TestId1"));
+					Assert.That(reader.GetString(keyNameOrdinal), Is.EqualTo("Id"));
 
 					Assert.That(reader.Read());
-					Assert.That(reader.GetInt64(idIndex), Is.EqualTo(new LongId(1, 0, 0, 0)));
+					Assert.That(reader.GetString(tableNameOrdinal), Is.EqualTo("TestId2"));
+					Assert.That(reader.GetString(keyNameOrdinal), Is.EqualTo("TestId2Id"));
 
 					Assert.That(!reader.Read());
 				}
