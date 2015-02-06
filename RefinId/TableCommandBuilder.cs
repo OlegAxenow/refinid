@@ -33,6 +33,11 @@ namespace RefinId
 		public const string KeyColumnName = "KeyName";
 
 		/// <summary>
+		///     Name of the column with shard (usually the same for single database).
+		/// </summary>
+		public const string ShardColumnName = "Shard";
+
+		/// <summary>
 		///     Default name of the table with information about last identifiers and types.
 		/// </summary>
 		public const string DefaultTableName = "_longIds";
@@ -207,6 +212,7 @@ namespace RefinId
 			yield return IdColumnName;
 			yield return TableNameColumnName;
 			yield return KeyColumnName;
+			yield return ShardColumnName;
 		}
 	}
 }

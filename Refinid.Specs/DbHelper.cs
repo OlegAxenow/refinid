@@ -6,11 +6,12 @@ namespace RefinId.Specs
 {
 	public static class DbHelper
 	{
-		public const string ConnectionString = "URI=file:memdb?mode=memory&cache=shared;Data Source=memdb;";
+		public const string ConnectionString = "FullUri=file:mydb.db?mode=memory&cache=shared";
 
 		public static DbConnection CreateConnection()
 		{
-			return new SQLiteConnection(ConnectionString);
+			var connection = new SQLiteConnection(ConnectionString);
+			return connection;
 		}
 
 		public static int GetTableCount(this DbCommand command, string tableName)

@@ -13,14 +13,14 @@ namespace RefinId.Specs
 		/// </summary>
 		/// <exception cref="ArgumentNullException"> If a parameter not specified.</exception>
 		public static void InsertInitialId(DbCommand command, string lastIdentifiersTableName,
-			long initialId, string tableNameForType, string keyColumnName)
+			long initialId, string tableNameForType, string keyColumnName, byte shard = 0)
 		{
 			if (command == null) throw new ArgumentNullException("command");
 			if (lastIdentifiersTableName == null) throw new ArgumentNullException("lastIdentifiersTableName");
 			if (tableNameForType == null) throw new ArgumentNullException("tableNameForType");
 			command.Run("INSERT INTO " + lastIdentifiersTableName +
 			            " VALUES (" + ((LongId)initialId).Type + "," + initialId + ",'" +
-			            tableNameForType + "', '" + keyColumnName + "')");
+			            tableNameForType + "', '" + keyColumnName + "', " + shard + ")");
 		}
 
 		[Test]
@@ -49,28 +49,27 @@ namespace RefinId.Specs
 		}
 
 		[Test]
-		public void Values_should_be_loaded_from_database()
+		public void Values_should_be_loaded_from_real_table()
 		{
 			// arrange
-			const long InitialId1 = 0x1FEECCBB44332211;
-			const long InitialId2 = 0x2FEECCBB44332211;
-
 			using (DbConnection connection = DbHelper.CreateConnection())
 			{
 				DbCommand command = connection.CreateCommand();
-				InsertInitialId(command, TableName, InitialId1, "fake_table", "fake_id");
-				InsertInitialId(command, TableName, InitialId2, "fake_table", "fake_id");
-
+				command.Run("CREATE TABLE TestRealId (Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
+				command.Run("INSERT INTO TestRealId VALUES(15, 'test');");
+				InsertInitialId(command, TableName, 1, "TestRealId", "Id");
+				
 				var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
 
 				// act
-				List<long> lastValues = storage.GetLastValues();
+				List<long> lastValues = storage.GetLastValues(true);
 
 				// assert
-				Assert.That(lastValues, Is.EquivalentTo(new[] { InitialId1, InitialId2 }));
+				Assert.That(lastValues, Is.EquivalentTo(new[] { 15 }));
 
 				// cleanup
 				command.Run("DELETE FROM " + TableName);
+				command.Run("DROP TABLE TestRealId ");
 			}
 		}
 
@@ -97,6 +96,32 @@ namespace RefinId.Specs
 
 				// assert
 				Assert.That(lastValues, Is.EquivalentTo(new[] { InitialId1 + 1, NewId3 + 3 }));
+
+				// cleanup
+				command.Run("DELETE FROM " + TableName);
+			}
+		}
+
+		[Test]
+		public void Values_should_be_loaded_from_database()
+		{
+			// arrange
+			const long InitialId1 = 0x1FEECCBB44332211;
+			const long InitialId2 = 0x2FEECCBB44332211;
+
+			using (DbConnection connection = DbHelper.CreateConnection())
+			{
+				DbCommand command = connection.CreateCommand();
+				InsertInitialId(command, TableName, InitialId1, "fake_table", "fake_id");
+				InsertInitialId(command, TableName, InitialId2, "fake_table", "fake_id");
+
+				var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+
+				// act
+				List<long> lastValues = storage.GetLastValues();
+
+				// assert
+				Assert.That(lastValues, Is.EquivalentTo(new[] { InitialId1, InitialId2 }));
 
 				// cleanup
 				command.Run("DELETE FROM " + TableName);

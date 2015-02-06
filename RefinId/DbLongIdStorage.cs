@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Text;
 
 namespace RefinId
 {
@@ -40,39 +41,33 @@ namespace RefinId
 			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
 			{
 				OnBeforeLoadValues(connection);
-				using (DbCommand command = _tableCommandBuilder.CreateSelectCommand(connection))
-				{
-					if (requestFromRealTables)
-						return SelectValuesFromTablesAndSaveToConfiguration(command);
-					return SelectValuesFromConfiguration(command);
-				}
+
+				if (requestFromRealTables)
+					return SaveToDatabase(null, connection, false);
+				return SelectValuesFromConfiguration(connection);
 			}
 		}
 
-		private List<long> SelectValuesFromTablesAndSaveToConfiguration(DbCommand command)
-		{
-			DbCommandBuilder dbCommandBuilder = _tableCommandBuilder.GetDbCommandBuilder();
-
-			throw new NotImplementedException("Reading from real tables with SELECT MAX not implemented.");
-		}
-
-		private static List<long> SelectValuesFromConfiguration(DbCommand command)
+		private List<long> SelectValuesFromConfiguration(DbConnection connection)
 		{
 			var result = new List<long>();
-			using (DbDataReader reader = command.ExecuteReader())
+			using (var command = _tableCommandBuilder.CreateSelectCommand(connection))
 			{
-				while (reader.Read())
+				using (var reader = command.ExecuteReader())
 				{
-					const int IdOrdinal = 1;
-					const int TypeOrdinal = 0;
+					int idOrdinal = reader.GetOrdinal(TableCommandBuilder.IdColumnName);
+					int typeOrdinal = reader.GetOrdinal(TableCommandBuilder.TypeColumnName);
 
-					var id = (LongId)reader.GetInt64(IdOrdinal);
-					if (reader.GetInt16(TypeOrdinal) != id.Type)
-						throw new InvalidOperationException(
-							string.Format("Type for id {0} should be {1} but equals to {2}.",
-								id, id.Type, reader.GetInt16(TypeOrdinal)));
+					while (reader.Read())
+					{
+						var id = (LongId)reader.GetInt64(idOrdinal);
+						if (reader.GetInt16(typeOrdinal) != id.Type)
+							throw new InvalidOperationException(
+								string.Format("Type for id {0} should be {1} but equals to {2}.",
+									id, id.Type, reader.GetInt16(typeOrdinal)));
 
-					result.Add(id);
+						result.Add(id);
+					}
 				}
 			}
 
@@ -100,26 +95,74 @@ namespace RefinId
 		public void SaveLastValue(long value)
 		{
 			SaveLastValues(new[] { value }, false);
-			throw new NotImplementedException("Should be replaced by optimized code");
+			// TODO: should be replaced by optimized code
 			// TODO: use hangfire (optional)
 		}
 
-		private void SaveToDatabase(IEnumerable<long> values, DbConnection connection, bool removeUnusedRows)
+		private List<long> SaveToDatabase(IEnumerable<long> values, DbConnection connection, bool removeUnusedRows)
 		{
 			// TODO: add/check filter for last value (assert that nobody updates storage without us), may be use SQL (instead of DataSet)
-			DbCommandBuilder builder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(connection);
+			DbCommandBuilder commandBuilder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(connection);
 
 			var dataSet = new DataSet();
-			builder.DataAdapter.Fill(dataSet);
+			commandBuilder.DataAdapter.Fill(dataSet);
 			DataTable table = dataSet.Tables[0];
+			List<long> result;
 
-			PrepareChanges(table, values, removeUnusedRows);
+			if (values == null)
+			{
+				result = LoadMaxIdentifiersFromDb(connection, table, commandBuilder);
+			}
+			else
+			{
+				result = new List<long>(values);
+			}
 
-			builder.DataAdapter.InsertCommand = builder.GetInsertCommand();
-			builder.DataAdapter.UpdateCommand = builder.GetUpdateCommand();
-			builder.DataAdapter.DeleteCommand = builder.GetDeleteCommand();
+			PrepareChanges(table, result, removeUnusedRows);
 
-			builder.DataAdapter.Update(dataSet);
+			commandBuilder.DataAdapter.InsertCommand = commandBuilder.GetInsertCommand();
+			commandBuilder.DataAdapter.UpdateCommand = commandBuilder.GetUpdateCommand();
+			commandBuilder.DataAdapter.DeleteCommand = commandBuilder.GetDeleteCommand();
+
+			commandBuilder.DataAdapter.Update(dataSet);
+
+			return result;
+		}
+
+		private static List<long> LoadMaxIdentifiersFromDb(DbConnection connection, DataTable table, DbCommandBuilder commandBuilder)
+		{
+			var dbValues = new List<long>();
+
+			int tableNameIndex = table.Columns.IndexOf(TableCommandBuilder.TableNameColumnName);
+			int keyNameIndex = table.Columns.IndexOf(TableCommandBuilder.KeyColumnName);
+			int typeIndex = table.Columns.IndexOf(TableCommandBuilder.TypeColumnName);
+			int shardIndex = table.Columns.IndexOf(TableCommandBuilder.ShardColumnName);
+
+			foreach (DataRow row in table.Rows)
+			{
+				string tableName = row[tableNameIndex].ToString();
+				string keyName = row[keyNameIndex].ToString();
+				var type = Convert.ToInt16(row[typeIndex]);
+				var shard = Convert.ToByte(row[shardIndex]);
+
+				var commandText = new StringBuilder();
+				commandText.Append("SELECT MAX(").Append(commandBuilder.QuoteIdentifier(keyName)).Append(")")
+					.Append(" FROM ").Append(commandBuilder.QuoteIdentifier(tableName));
+				using (var command = connection.CreateCommand())
+				{
+					command.CommandText = commandText.ToString();
+					var lastValueInTable = command.ExecuteScalar();
+					if (lastValueInTable == null)
+					{
+						dbValues.Add(new LongId(type, shard, 0));
+					}
+					else
+					{
+						dbValues.Add(Convert.ToInt64(lastValueInTable));
+					}
+				}
+			}
+			return dbValues;
 		}
 
 		private void PrepareChanges(DataTable table, IEnumerable<long> values, bool removeUnusedRows)
@@ -161,7 +204,7 @@ namespace RefinId
 				for (int i = table.Rows.Count - 1; i >= 0; i--)
 				{
 					DataRow row = table.Rows[i];
-					// if "typeid" will be removed, we can use:  ((LongId)Convert.ToInt64(row[IdColumnName])).Type;
+					// TODO: if "typeid" will be removed, we can use:  ((LongId)Convert.ToInt64(row[IdColumnName])).Type;
 					if (tableIdMapByType.ContainsKey(Convert.ToInt16(row[TableCommandBuilder.TypeColumnName])))
 					{
 						row.Delete();

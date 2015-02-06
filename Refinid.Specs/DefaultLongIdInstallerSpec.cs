@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Data;
+using System.Data.Common;
 using NUnit.Framework;
 using RefinId.Metadata;
 
@@ -25,6 +27,31 @@ namespace RefinId.Specs
 				var result = command.ExecuteScalar();
 				Assert.That(result, Is.Not.Null);
 				Assert.That(Convert.ToInt64(result), Is.EqualTo(1));
+			}
+		}
+
+		[Test]
+		public void All_columns_should_be_created()
+		{
+			// arrange
+			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			using (var connection = DbHelper.CreateConnection())
+			{
+				connection.DropTableIfExists(TableName);
+				var tableCommandBuilder = new TableCommandBuilder(DbHelper.ConnectionString, "System.Data.SQLite");
+				var commandBuilder = tableCommandBuilder.InitializeCommandBuilderAndAdapter(connection);
+				var dataSet = new DataSet();
+				
+				// act
+				installer.Install(0, 0, false, null);
+
+				// assert
+				commandBuilder.DataAdapter.Fill(dataSet);
+
+				foreach (var columnName in TableCommandBuilder.GetColumnNames())
+				{
+					Assert.That(dataSet.Tables[0].Columns.IndexOf(columnName) >= 0);
+				}
 			}
 		}
 
@@ -100,7 +127,7 @@ namespace RefinId.Specs
 				command.Run("CREATE TABLE TestId2 (TestId2Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
 				
 				// act
-				installer.Install(0, 0, false, new Table(0, "TestId1"), new Table(1, "TestId2"));
+				installer.Install(11, 0, false, new Table(0, "TestId1"), new Table(1, "TestId2"));
 
 				// assert
 				command.CommandText = "SELECT * FROM " + TableName + " ORDER BY " + TableCommandBuilder.IdColumnName;
@@ -108,14 +135,17 @@ namespace RefinId.Specs
 				{
 					int tableNameOrdinal = reader.GetOrdinal(TableCommandBuilder.TableNameColumnName);
 					int keyNameOrdinal = reader.GetOrdinal(TableCommandBuilder.KeyColumnName);
+					int shardNameOrdinal = reader.GetOrdinal(TableCommandBuilder.ShardColumnName);
 
 					Assert.That(reader.Read());
 					Assert.That(reader.GetString(tableNameOrdinal), Is.EqualTo("TestId1"));
 					Assert.That(reader.GetString(keyNameOrdinal), Is.EqualTo("Id"));
+					Assert.That(reader.GetInt16(shardNameOrdinal), Is.EqualTo(11));
 
 					Assert.That(reader.Read());
 					Assert.That(reader.GetString(tableNameOrdinal), Is.EqualTo("TestId2"));
 					Assert.That(reader.GetString(keyNameOrdinal), Is.EqualTo("TestId2Id"));
+					Assert.That(reader.GetInt16(shardNameOrdinal), Is.EqualTo(11));
 
 					Assert.That(!reader.Read());
 				}

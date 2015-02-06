@@ -66,7 +66,7 @@ namespace RefinId
 					list.Add(key);
 				}
 
-				RunTableCreation(command);
+				RunTableCreation(command, commandBuilder);
 				if (tables == null) return;
 
 				InsertConfiguration(useUniqueIfPrimaryKeyNotMatch, tables, command, commandBuilder, keys, shard, reserved);
@@ -83,6 +83,7 @@ namespace RefinId
 			DbParameter type = null;
 			DbParameter tableName = null;
 			DbParameter key = null;
+			DbParameter shardParameter = null;
 
 			foreach (var columnName in TableCommandBuilder.GetColumnNames())
 			{
@@ -90,16 +91,19 @@ namespace RefinId
 				switch (columnName)
 				{
 					case TableCommandBuilder.IdColumnName:
-						parameter = id = AddParameter(command, DbType.Int64, "id");
+						parameter = id = AddParameter(command, DbType.Int64, columnName);
 						break;
 					case TableCommandBuilder.TypeColumnName:
-						parameter = type = AddParameter(command, DbType.Int16, "type");
+						parameter = type = AddParameter(command, DbType.Int16, columnName);
 						break;
 					case TableCommandBuilder.TableNameColumnName:
-						parameter = tableName = AddParameter(command, DbType.String, "tableName", SysNameSize);
+						parameter = tableName = AddParameter(command, DbType.String, columnName, SysNameSize);
 						break;
 					case TableCommandBuilder.KeyColumnName:
-						parameter = key = AddParameter(command, DbType.String, "key", SysNameSize);
+						parameter = key = AddParameter(command, DbType.String, columnName, SysNameSize);
+						break;
+					case TableCommandBuilder.ShardColumnName:
+						parameter = shardParameter = AddParameter(command, DbType.Int16, columnName);
 						break;
 					default:
 						throw new InvalidOperationException(string.Format("Unknown column name '{0}'.", columnName));
@@ -108,7 +112,7 @@ namespace RefinId
 				insertBuilder.Append(parameter.ParameterName).Append(",");
 			}
 
-			if (id == null || type == null || tableName == null || key == null)
+			if (id == null || type == null || tableName == null || key == null || shardParameter == null)
 				throw new InvalidOperationException("Not all columns obtained from builder.");
 
 			// replace last ",' with ")"
@@ -123,9 +127,10 @@ namespace RefinId
 				string targetColumnName = GetTargetColumnNameFromUniqueKeys(fullTableName, table, useUniqueIfPrimaryKeyNotMatch, keys);
 
 				type.Value = table.TypeId;
-				id.Value = (long)new LongId(table.TypeId, shard, reserved, 0);
+				id.Value = (long)new LongId(table.TypeId, shard, reserved);
 				tableName.Value = table.TableName;
 				key.Value = targetColumnName;
+				shardParameter.Value = shard;
 
 				command.ExecuteNonQuery();
 				
@@ -184,13 +189,15 @@ Use Table.KeyColumnName to specify desired column.", LongDbDataType, fullTableNa
 			return commandBuilder.QuoteIdentifier(table.Schema) + "." + commandBuilder.QuoteIdentifier(table.TableName);
 		}
 
-		private void RunTableCreation(DbCommand command)
+		private void RunTableCreation(DbCommand command, DbCommandBuilder commandBuilder)
 		{
 			if (!_metadataProvider.TableExists(command, _tableCommandBuilder.TableName))
-			command.Run("CREATE TABLE " + _tableCommandBuilder.QuotedTableName + " (" + TableCommandBuilder.TypeColumnName +
-			            " SMALLINT NOT NULL PRIMARY KEY, " + TableCommandBuilder.IdColumnName +
-			            " BIGINT NOT NULL, " + TableCommandBuilder.TableNameColumnName +
-						" VARCHAR (" + SysNameSize + ") NULL," + TableCommandBuilder.KeyColumnName + " VARCHAR (" + SysNameSize + ") NULL)");
+			command.Run("CREATE TABLE " + _tableCommandBuilder.QuotedTableName + " (" +
+				commandBuilder.QuoteIdentifier(TableCommandBuilder.TypeColumnName) + " SMALLINT NOT NULL PRIMARY KEY, " + 
+				commandBuilder.QuoteIdentifier(TableCommandBuilder.IdColumnName) + " BIGINT NOT NULL, " + 
+				commandBuilder.QuoteIdentifier(TableCommandBuilder.TableNameColumnName) + " VARCHAR (" + SysNameSize + ") NULL," + 
+				commandBuilder.QuoteIdentifier(TableCommandBuilder.KeyColumnName) + " VARCHAR (" + SysNameSize + ") NULL," +
+				commandBuilder.QuoteIdentifier(TableCommandBuilder.ShardColumnName) + " SMALLINT NULL)");
 		}
 	}
 }
