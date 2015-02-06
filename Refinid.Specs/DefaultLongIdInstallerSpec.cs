@@ -1,9 +1,8 @@
 ﻿using System;
 using NUnit.Framework;
-using RefinId;
 using RefinId.Metadata;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	[TestFixture]
 	public class DefaultLongIdInstallerSpec : BaseStorageSpec
@@ -26,6 +25,29 @@ namespace Refinid.Specs
 				var result = command.ExecuteScalar();
 				Assert.That(result, Is.Not.Null);
 				Assert.That(Convert.ToInt64(result), Is.EqualTo(1));
+			}
+		}
+
+		[Test]
+		public void Type_should_be_unique_for_all_ids()
+		{
+			// arrange
+			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			using (var connection = DbHelper.CreateConnection())
+			{
+				var command = connection.CreateCommand();
+
+				connection.DropTableIfExists(TableName);
+				connection.DropTableIfExists("TestId1");
+				connection.DropTableIfExists("TestId2");
+				command.Run("CREATE TABLE TestId1 (Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
+				command.Run("CREATE TABLE TestId2 (TestId2Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
+				command.Run("INSERT INTO TestId1 VALUES(123, 'Test')");
+				command.Run("INSERT INTO TestId2 VALUES(1230, 'Test')");
+
+				// act + assert
+				Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1"), new Table(1, "TestId2")), 
+					Throws.ArgumentException.With.Message.StringContaining("already"));
 			}
 		}
 

@@ -9,7 +9,7 @@ using System.Security.Permissions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	/// <summary>
 	///     Runs test in parallel threads and properly handle asserts.

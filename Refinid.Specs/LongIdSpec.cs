@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	[TestFixture]
 	public class LongIdSpec

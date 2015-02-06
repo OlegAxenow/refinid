@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	public class TestStorage : ILongIdStorage
 	{

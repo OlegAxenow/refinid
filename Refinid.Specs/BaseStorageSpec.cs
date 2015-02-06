@@ -1,8 +1,7 @@
 ﻿using System.Data.Common;
 using NUnit.Framework;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	public class BaseStorageSpec
 	{

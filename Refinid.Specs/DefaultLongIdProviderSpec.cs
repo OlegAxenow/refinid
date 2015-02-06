@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using NUnit.Framework;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	[TestFixture]
 	public class DefaultLongIdProviderSpec

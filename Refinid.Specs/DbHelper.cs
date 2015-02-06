@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Data.Common;
 using System.Data.SQLite;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	public static class DbHelper
 	{

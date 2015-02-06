@@ -2,7 +2,7 @@
 using System.Data.Common;
 using RefinId.Metadata;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	public class TestDbMetadataProvider : IDbMetadataProvider
 	{

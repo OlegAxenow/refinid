@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using NUnit.Framework;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	[TestFixture]
 	public class DbLongIdStorageSpec : BaseStorageSpec
