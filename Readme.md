@@ -47,7 +47,7 @@ You can take a look on code from unit-test to see how to use it:
 
 ### DefaultLongIdFactory
 
-*DefaultLongIdFactory* provides Create method to retrieve new identifier for specified entity type. This factory (surprise!) is thread-safe.
+*DefaultLongIdFactory* provides *Create* method to retrieve new identifier for specified entity type. This factory is thread-safe.
 
 Two things are not trivial, let me explain it:
 
@@ -68,6 +68,6 @@ License: [MIT](http://opensource.org/licenses/MIT).
 
 The source code depends on following NuGet packages:
 
-- Moq (only for Refinid.Specs)
-- NUnit (only for Refinid.Specs)
-- System.Data.SQLite.Core (only for Refinid.Specs)
+- Moq (only for RefinId.Specs)
+- NUnit (only for RefinId.Specs)
+- System.Data.SQLite.Core (only for RefinId.Specs)
