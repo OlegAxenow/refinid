@@ -130,7 +130,7 @@ namespace RefinId
 			{
 				string fullTableName = GetFullTableName(commandBuilder, table);
 
-				// TODO: when table.KeyColumnName specified use ColumnsProvider.GetLongColumns to find long identifier regardless unique or primary keys
+				// if you want to not use real unique keys - implement your own IDbMetadataProvider
 				string targetColumnName = GetTargetColumnNameFromUniqueKeys(fullTableName, table, useUniqueIfPrimaryKeyNotMatch, keys);
 
 				type.Value = table.TypeId;

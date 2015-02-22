@@ -6,6 +6,8 @@ namespace RefinId.Metadata
 	/// <summary>
 	///     Provides information about tables, primary and unique keys.
 	/// </summary>
+	/// <remarks> You can implement your own <see cref="IDbMetadataProvider"/> 
+	/// e.g. to treat all BIGINT columns as unique in <see cref="GetUniqueKeys"/>.</remarks>
 	public interface IDbMetadataProvider
 	{
 		/// <summary>
