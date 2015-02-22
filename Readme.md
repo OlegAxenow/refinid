@@ -45,9 +45,9 @@ You can take a look on code from unit-test to see how to use it:
 	Assert.That(id.Shard, Is.EqualTo(0xCC));
 	Assert.That(id.Reserved, Is.EqualTo(0xBB));
 
-### DefaultLongIdFactory
+### DefaultLongIdProvider
 
-*DefaultLongIdFactory* provides *Create* method to retrieve new identifier for specified entity type. This factory is thread-safe.
+*DefaultLongIdProvider* provides *Create* method to retrieve new identifier for specified entity type. This factory is thread-safe.
 
 Two things are not trivial, let me explain it:
 
