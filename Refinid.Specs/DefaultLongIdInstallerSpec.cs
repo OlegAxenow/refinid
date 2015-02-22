@@ -21,7 +21,7 @@ namespace RefinId.Specs
 				var command = connection.CreateCommand();
 				
 				// act
-				installer.Install(0, 0, false, null);
+				installer.Install(0, 0, false);
 
 				// assert
 				command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' and name = '" + TableName + "'";
@@ -45,7 +45,7 @@ namespace RefinId.Specs
 				var dataSet = new DataSet();
 				
 				// act
-				installer.Install(0, 0, false, null);
+				installer.Install(0, 0, false);
 
 				// assert
 				commandBuilder.DataAdapter.Fill(dataSet);
@@ -195,6 +195,14 @@ namespace RefinId.Specs
 		public void Tables_with_only_unique_keys_should_not_cause_errors_if_flag_set()
 		{
 			// arrange
+			
+			using (var connection = DbHelper.CreateConnection())
+			{
+				var command = connection.CreateCommand();
+				connection.DropTableIfExists("TestIdUniqueOnly");
+				command.Run("CREATE TABLE TestIdUniqueOnly (Id BIGINT, Name VARCHAR(128));");
+			}
+
 			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
 			var installer = new DefaultLongIdInstaller(
 				new TestDbMetadataProvider(new UniqueKey(string.Empty, "TestIdUniqueOnly", "Id", false)), storage);

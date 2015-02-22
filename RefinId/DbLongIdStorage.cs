@@ -151,7 +151,7 @@ namespace RefinId
 				{
 					command.CommandText = commandText.ToString();
 					var lastValueInTable = command.ExecuteScalar();
-					if (lastValueInTable == null)
+					if (lastValueInTable == null || lastValueInTable == DBNull.Value)
 					{
 						dbValues.Add(new LongId(type, shard, 0));
 					}
