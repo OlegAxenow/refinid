@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\RefinId.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,17 +35,27 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DbLongIdStorageWithInstaller.cs" />
-    <Compile Include="DefaultLongIdFactory.cs" />
-    <Compile Include="ILongIdFactory.cs" />
+    <Compile Include="DbCommandExtensions.cs" />
+    <Compile Include="DefaultHelper.cs" />
+    <Compile Include="Metadata\IDbMetadataProvider.cs" />
+    <Compile Include="Metadata\SQLiteDbMetadataProvider.cs" />
+    <Compile Include="Metadata\UniqueKey.cs" />
+    <Compile Include="Metadata\DbMetadataProvider.cs" />
+    <Compile Include="ISchemaAndTable.cs" />
+    <Compile Include="DefaultLongIdInstaller.cs" />
+    <Compile Include="DefaultLongIdProvider.cs" />
+    <Compile Include="ILongIdProvider.cs" />
     <Compile Include="ILongIdStorage.cs" />
     <Compile Include="..\..\LongId.cs">
       <Link>LongId.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DbLongIdStorage.cs" />
+    <Compile Include="TableCommandBuilder.cs" />
+    <Compile Include="Table.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -3,13 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RefinId", "RefinId\RefinId.csproj", "{E95F2C9F-C996-4D99-8FB3-B1FEB72ECE2C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refinid.Specs", "Refinid.Specs\Refinid.Specs.csproj", "{CB558D28-34F0-48A5-9765-DB5C0F650D2F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RefinId.Specs", "Refinid.Specs\RefinId.Specs.csproj", "{CB558D28-34F0-48A5-9765-DB5C0F650D2F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{05BC0068-65B7-4E4D-AEEE-D2077567619B}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A71EC008-6215-4907-BB04-092273A6B44C}"
+	ProjectSection(SolutionItems) = preProject
+		Readme.md = Readme.md
 	EndProjectSection
 EndProject
 Global

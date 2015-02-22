@@ -9,10 +9,11 @@ using System.Security.Permissions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	/// <summary>
-	/// Runs test in parallel threads and properly handle asserts.</summary>
+	///     Runs test in parallel threads and properly handle asserts.
+	/// </summary>
 	public class MultiThreadTestRunner
 	{
 		private readonly ThreadStart _userDelegate;
@@ -24,7 +25,8 @@ namespace Refinid.Specs
 		}
 
 		/// <summary>
-		/// Runs <see cref="_userDelegate"/> in <paramref name="times"/> parallel threads.</summary>
+		///     Runs <see cref="_userDelegate" /> in <paramref name="times" /> parallel threads.
+		/// </summary>
 		/// <param name="times">Desired thread count.</param>
 		/// <param name="millisecondsAverageDelay">Average delay between each thread start time.</param>
 		/// <param name="millisecondsTimeout">Time limit for all threads.</param>
@@ -51,7 +53,7 @@ namespace Refinid.Specs
 
 			int workerThreads, completionPortThreads;
 			ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
-			
+
 			if (workerThreads < threadCount)
 				ThreadPool.SetMaxThreads(threadCount + 1, completionPortThreads);
 		}

@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using NUnit.Framework;
-using RefinId;
 
-namespace Refinid.Specs
+namespace RefinId.Specs
 {
 	[TestFixture]
-	public class DefaultLongIdFactorySpec
+	public class DefaultLongIdProviderSpec
 	{
 		[TestCase(0x0101AABB01010101, 0x0001AABB01010101, 0x0F01AABB01010101, 0x0201AABB01010101)]
-		[TestCase(new[] {0x0101AABB01010101L})]
+		[TestCase(new[] { 0x0101AABB01010101L })]
 		[TestCase]
 		public void Last_values_should_be_correctly_loaded(params long[] values)
 		{
@@ -19,8 +18,8 @@ namespace Refinid.Specs
 			var storage = new TestStorage(values.ToArray());
 
 			// act
-			var factory = new DefaultLongIdFactory(storage);
-			factory.FlushToStorage();
+			var provider = new DefaultLongIdProvider(storage);
+			provider.FlushToStorage();
 
 			// assert
 			Assert.That(storage.Values, Is.EquivalentTo(values));
@@ -30,36 +29,36 @@ namespace Refinid.Specs
 		public void Create_should_increment_value()
 		{
 			// arrange
-			const long initialValue = 0x0101AABB01010101;
-			var storage = new TestStorage(initialValue);
-			var factory = new DefaultLongIdFactory(storage);
+			const long InitialValue = 0x0101AABB01010101;
+			var storage = new TestStorage(InitialValue);
+			var provider = new DefaultLongIdProvider(storage);
 
 			// act + assert
-			Assert.That(() => factory.Create(0x0101), Is.EqualTo(initialValue + 1));
-			Assert.That(() => factory.Create(0x0101), Is.EqualTo(initialValue + 2));
+			Assert.That(() => provider.Create(0x0101), Is.EqualTo(InitialValue + 1));
+			Assert.That(() => provider.Create(0x0101), Is.EqualTo(InitialValue + 2));
 		}
 
 		[Test]
 		public void Create_should_not_produce_exact_number_of_different_values_in_different_threads()
 		{
 			// arrange
-			const int times = 100;
-			const long initialValue = 0x0101AABB01010101;
+			const int Times = 100;
+			const long InitialValue = 0x0101AABB01010101;
 
-			var storage = new TestStorage(initialValue);
-			var factory = new DefaultLongIdFactory(storage);
+			var storage = new TestStorage(InitialValue);
+			var provider = new DefaultLongIdProvider(storage);
 
 			var queue = new ConcurrentQueue<long>();
 
 			// act
 			new MultiThreadTestRunner(() =>
 			{
-				var id = factory.Create(0x0101);
+				long id = provider.Create(0x0101);
 				queue.Enqueue(id);
 
 				Debug.WriteLine(id);
-				Assert.That(id, Is.GreaterThan(initialValue));
-			}).Run(times, 0);
+				Assert.That(id, Is.GreaterThan(InitialValue));
+			}).Run(Times, 0);
 
 			// assert
 			var allIds = new HashSet<long>();
@@ -73,8 +72,8 @@ namespace Refinid.Specs
 					maxResult = result;
 			}
 
-			Assert.That(allIds.Count, Is.EqualTo(times));
-			Assert.That(maxResult - initialValue, Is.EqualTo(times));
+			Assert.That(allIds.Count, Is.EqualTo(Times));
+			Assert.That(maxResult - InitialValue, Is.EqualTo(Times));
 		}
 	}
 }
