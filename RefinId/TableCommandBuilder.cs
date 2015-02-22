@@ -12,23 +12,23 @@ namespace RefinId
 	public class TableCommandBuilder
 	{
 		/// <summary>
-		///     Name of the identifier column in <see cref="DbLongIdStorage.TableName" />.
+		///     Name of the identifier column in <see cref="QuotedTableName" />.
 		/// </summary>
 		public const string IdColumnName = "Id";
 
 		/// <summary>
-		///     Name of the type column in <see cref="DbLongIdStorage.TableName" />.
+		///     Name of the type column in <see cref="QuotedTableName" />.
 		/// </summary>
 		public const string TypeColumnName = "TypeId";
 
 		/// <summary>
 		///     Name of the column with table name for type,
-		///     specified by <see cref="TypeColumnName" /> in <see cref="DbLongIdStorage.TableName" />.
+		///     specified by <see cref="TypeColumnName" /> in <see cref="QuotedTableName" />.
 		/// </summary>
 		public const string TableNameColumnName = "TableName";
 
 		/// <summary>
-		///     Name of the column with key column name from referenced table in <see cref="DbLongIdStorage.TableName" />.
+		///     Name of the column with key column name from referenced table in <see cref="QuotedTableName" />.
 		/// </summary>
 		public const string KeyColumnName = "KeyName";
 

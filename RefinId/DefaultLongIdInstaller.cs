@@ -21,23 +21,20 @@ namespace RefinId
 
 		private const int SysNameSize = 128;
 		private readonly IDbMetadataProvider _metadataProvider;
-		private readonly TableCommandBuilder _tableCommandBuilder;
-		
+		private readonly ILongIdStorage _storage;
+
 		/// <summary>
-		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
+		/// Stores parameters into fields.
 		/// </summary>
-		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details..</param>
-		/// <param name="metadataProvider"> <see cref="IDbMetadataProvider"/> to retrieve unique keys from storage.</param>
-		/// <param name="dbProviderName"> Name of the database provider for <see cref="DbProviderFactories.GetFactory(string)"/>.</param>
-		/// <param name="tableName"> See <see cref="TableCommandBuilder" /> for details.</param>
-		public DefaultLongIdInstaller(string connectionString, IDbMetadataProvider metadataProvider, string dbProviderName, string tableName = null)
+		/// <param name="metadataProvider"> <see cref="IDbMetadataProvider"/> to retrieve unique keys from storage metedata.</param>
+		/// <param name="storage"> <see cref="ILongIdStorage"/> to operate with storage.</param>
+		public DefaultLongIdInstaller(IDbMetadataProvider metadataProvider, ILongIdStorage storage)
 		{
-			if (connectionString == null) throw new ArgumentNullException("connectionString");
 			if (metadataProvider == null) throw new ArgumentNullException("metadataProvider");
-			if (dbProviderName == null) throw new ArgumentNullException("dbProviderName");
+			if (storage == null) throw new ArgumentNullException("storage");
 
 			_metadataProvider = metadataProvider;
-			_tableCommandBuilder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
+			_storage = storage;
 		}
 
 		/// <summary>
@@ -49,9 +46,20 @@ namespace RefinId
 		/// <param name="tables"> Optional tables to be included into configuration.</param>
 		public void Install(byte shard, byte reserved, bool useUniqueIfPrimaryKeyNotMatch, params Table[] tables)
 		{
-			using (var connection = _tableCommandBuilder.OpenConnection())
+			var tablesByType = new Dictionary<short, string>();
+			foreach (var table in tables)
 			{
-				var commandBuilder = _tableCommandBuilder.GetDbCommandBuilder();
+				if (tablesByType.ContainsKey(table.TypeId))
+					throw new ArgumentException(string.Format(
+						"Invalid type {0} for the table '{1}' because the table '{2}' already has this type.",
+						table.TypeId, table.TableName, tablesByType[table.TypeId]));
+
+				tablesByType.Add(table.TypeId, table.TableName);
+			}
+
+			using (var connection = _storage.Builder.OpenConnection())
+			{
+				var commandBuilder = _storage.Builder.GetDbCommandBuilder();
 				DbCommand command = connection.CreateCommand();
 
 				var keys = new Dictionary<string, List<UniqueKey>>();
@@ -67,8 +75,7 @@ namespace RefinId
 				}
 
 				RunTableCreation(command, commandBuilder);
-				if (tables == null) return;
-
+				
 				InsertConfiguration(useUniqueIfPrimaryKeyNotMatch, tables, command, commandBuilder, keys, shard, reserved);
 			}
 		}
@@ -77,7 +84,7 @@ namespace RefinId
 			DbCommandBuilder commandBuilder, Dictionary<string, List<UniqueKey>> keys, byte shard, byte reserved)
 		{
 			var insertBuilder = new StringBuilder();
-			insertBuilder.Append(_tableCommandBuilder.InsertCommandPrefix).Append(" VALUES (");
+			insertBuilder.Append(_storage.Builder.InsertCommandPrefix).Append(" VALUES (");
 
 			DbParameter id = null;
 			DbParameter type = null;
@@ -133,10 +140,9 @@ namespace RefinId
 				shardParameter.Value = shard;
 
 				command.ExecuteNonQuery();
-				
-				/* TODO: update identifiers from real tables with storage and checks that LongId.Type matches 
-				 * may be additional options should be introduced */
 			}
+
+			_storage.GetLastValues(true);
 		}
 
 		private DbParameter AddParameter(DbCommand command, DbType dbType, string parameterName, int size = 0)
@@ -191,8 +197,8 @@ Use Table.KeyColumnName to specify desired column.", LongDbDataType, fullTableNa
 
 		private void RunTableCreation(DbCommand command, DbCommandBuilder commandBuilder)
 		{
-			if (!_metadataProvider.TableExists(command, _tableCommandBuilder.TableName))
-			command.Run("CREATE TABLE " + _tableCommandBuilder.QuotedTableName + " (" +
+			if (!_metadataProvider.TableExists(command, _storage.Builder.TableName))
+			command.Run("CREATE TABLE " + _storage.Builder.QuotedTableName + " (" +
 				commandBuilder.QuoteIdentifier(TableCommandBuilder.TypeColumnName) + " SMALLINT NOT NULL PRIMARY KEY, " + 
 				commandBuilder.QuoteIdentifier(TableCommandBuilder.IdColumnName) + " BIGINT NOT NULL, " + 
 				commandBuilder.QuoteIdentifier(TableCommandBuilder.TableNameColumnName) + " VARCHAR (" + SysNameSize + ") NULL," + 

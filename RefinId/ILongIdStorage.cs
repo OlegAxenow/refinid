@@ -52,8 +52,7 @@ namespace RefinId
 		/// </remarks>
 		/// <param name="values"> Required values.</param>
 		/// <param name="removeUnusedRows"> Whether to remove absent entries inside <see cref="SaveLastValues" />.</param>
-		void SaveLastValues(IEnumerable<long> values,
-			bool removeUnusedRows = true);
+		void SaveLastValues(IEnumerable<long> values, bool removeUnusedRows = true);
 
 		/// <summary>
 		///     Saves last <see cref="LongId" /> value to storage (for <see cref="LongId.Type" />).
@@ -63,5 +62,10 @@ namespace RefinId
 		///     <see cref="long" /> can be implicitly converted to <see cref="LongId" /> and vice versa.
 		/// </remarks>
 		void SaveLastValue(long value);
+
+		/// <summary>
+		/// Gets current <see cref="RefinId.TableCommandBuilder"/>.
+		/// </summary>
+		TableCommandBuilder Builder { get; }
 	}
 }

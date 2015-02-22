@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace RefinId.Specs
 {
@@ -30,6 +31,11 @@ namespace RefinId.Specs
 		public void SaveLastValue(long value)
 		{
 			SaveLastValues(new[] { value });
+		}
+
+		public TableCommandBuilder Builder
+		{
+			get { throw new NotImplementedException(); }
 		}
 	}
 }

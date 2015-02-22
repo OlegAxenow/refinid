@@ -62,12 +62,18 @@ namespace RefinId.Metadata
 			}
 		}
 
+		/// <summary>
+		/// Implements <see cref="IDbMetadataProvider.TableExists"/>.
+		/// </summary>
 		public bool TableExists(DbCommand command, string tableName)
 		{
 			var rowCount = command.Run(string.Format(TablesPattern, tableName), true);
 			return rowCount != null && Convert.ToInt32(rowCount) == 1;
 		}
 
+		/// <summary>
+		/// Implements <see cref="IDbMetadataProvider.GetParameterName"/>.
+		/// </summary>
 		public string GetParameterName(string invariantName)
 		{
 			if (invariantName == null) throw new ArgumentNullException("invariantName");

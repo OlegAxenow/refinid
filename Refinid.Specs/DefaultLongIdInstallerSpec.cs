@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data;
-using System.Data.Common;
 using NUnit.Framework;
 using RefinId.Metadata;
 
@@ -9,11 +8,13 @@ namespace RefinId.Specs
 	[TestFixture]
 	public class DefaultLongIdInstallerSpec : BaseStorageSpec
 	{
+
 		[Test]
 		public void Table_should_be_created()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new SQLiteDbMetadataProvider(), storage);
 			using (var connection = DbHelper.CreateConnection())
 			{
 				connection.DropTableIfExists(TableName);
@@ -34,7 +35,8 @@ namespace RefinId.Specs
 		public void All_columns_should_be_created()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new SQLiteDbMetadataProvider(), storage);
 			using (var connection = DbHelper.CreateConnection())
 			{
 				connection.DropTableIfExists(TableName);
@@ -59,7 +61,8 @@ namespace RefinId.Specs
 		public void Type_should_be_unique_for_all_ids()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new SQLiteDbMetadataProvider(), storage);
 			using (var connection = DbHelper.CreateConnection())
 			{
 				var command = connection.CreateCommand();
@@ -73,7 +76,7 @@ namespace RefinId.Specs
 				command.Run("INSERT INTO TestId2 VALUES(1230, 'Test')");
 
 				// act + assert
-				Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1"), new Table(1, "TestId2")), 
+				Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1"), new Table(0, "TestId2")), 
 					Throws.ArgumentException.With.Message.StringContaining("already"));
 			}
 		}
@@ -82,7 +85,8 @@ namespace RefinId.Specs
 		public void Last_id_should_be_loaded_from_table()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new SQLiteDbMetadataProvider(), storage);
 			using (var connection = DbHelper.CreateConnection())
 			{
 				var command = connection.CreateCommand();
@@ -112,10 +116,32 @@ namespace RefinId.Specs
 		}
 
 		[Test]
+		public void Wrong_type_for_real_id_should_cause_exception()
+		{
+			// arrange
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new SQLiteDbMetadataProvider(), storage);
+			using (var connection = DbHelper.CreateConnection())
+			{
+				var command = connection.CreateCommand();
+
+				connection.DropTableIfExists(TableName);
+				connection.DropTableIfExists("TestId1");
+				command.Run("CREATE TABLE TestId1 (Id BIGINT PRIMARY KEY, Name VARCHAR(128));");
+				command.Run("INSERT INTO TestId1 VALUES(-1, 'Test')");
+
+				// act + assert
+				Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
+					Throws.InvalidOperationException.With.Message.ContainsSubstring("has last id with type"));
+			}
+		}
+
+		[Test]
 		public void Specified_tables_should_be_appended_to_configuration()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new SQLiteDbMetadataProvider(), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new SQLiteDbMetadataProvider(), storage);
 			using (var connection = DbHelper.CreateConnection())
 			{
 				var command = connection.CreateCommand();
@@ -156,8 +182,9 @@ namespace RefinId.Specs
 		public void Tables_without_primary_keys_should_cause_errors_if_flag_not_set()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString,
-				new TestDbMetadataProvider(new UniqueKey("dbo", "TestId1", "Id", false)), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(
+				new TestDbMetadataProvider(new UniqueKey("dbo", "TestId1", "Id", false)), storage);
 			
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
@@ -168,8 +195,9 @@ namespace RefinId.Specs
 		public void Tables_with_only_unique_keys_should_not_cause_errors_if_flag_set()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString,
-				new TestDbMetadataProvider(new UniqueKey(string.Empty, "TestIdUniqueOnly", "Id", false)), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(
+				new TestDbMetadataProvider(new UniqueKey(string.Empty, "TestIdUniqueOnly", "Id", false)), storage);
 			
 			// act
 			installer.Install(0, 0, true, new Table(0, "TestIdUniqueOnly"));
@@ -188,7 +216,8 @@ namespace RefinId.Specs
 		public void Tables_with_no_keys_should_cause_errors()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString, new TestDbMetadataProvider(), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(new TestDbMetadataProvider(), storage);
 
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1")),
@@ -199,8 +228,9 @@ namespace RefinId.Specs
 		public void Tables_with_no_matched_key_column_should_cause_errors()
 		{
 			// arrange
-			var installer = new DefaultLongIdInstaller(DbHelper.ConnectionString,
-				new TestDbMetadataProvider(new UniqueKey("dbo", "TestId1", "Id", true)), DbProviderName);
+			var storage = new DbLongIdStorage(DbHelper.ConnectionString, DbProviderName);
+			var installer = new DefaultLongIdInstaller(
+				new TestDbMetadataProvider(new UniqueKey("dbo", "TestId1", "Id", true)), storage);
 
 			// act + assert
 			Assert.That(() => installer.Install(0, 0, false, new Table(0, "TestId1", keyColumnName: "TestId")),

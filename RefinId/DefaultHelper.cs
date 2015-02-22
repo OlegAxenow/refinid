@@ -41,12 +41,12 @@ namespace RefinId
 		}
 
 		/// <summary>
-		/// Creates <see cref="DefaultLongIdInstaller"/> and pass parameters to <see cref="DefaultLongIdInstaller.Install"/>.
+		/// Creates <see cref="DefaultLongIdInstaller"/> and pass default parameters to <see cref="DefaultLongIdInstaller.Install"/>.
 		/// </summary>
 		public void Install(byte shard, byte reserved, bool useUniqueIfPrimaryKeyNotMatch, params Table[] tables)
 		{
-			var installer = new DefaultLongIdInstaller(_connectionString, _dbMetadataProvider ?? new DbMetadataProvider(),
-				_dbProviderName, _configurationTableName);
+			var storage = new DbLongIdStorage(_connectionString, _dbProviderName, _configurationTableName);
+			var installer = new DefaultLongIdInstaller(_dbMetadataProvider ?? new DbMetadataProvider(), storage);
 			installer.Install(shard, reserved, useUniqueIfPrimaryKeyNotMatch, tables);
 		}
 	}

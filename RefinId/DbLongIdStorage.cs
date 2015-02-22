@@ -12,25 +12,25 @@ namespace RefinId
 	/// <remarks>By default, expects table _longIds(Id as long).</remarks>
 	public class DbLongIdStorage : ILongIdStorage
 	{
-		private readonly TableCommandBuilder _tableCommandBuilder;
+		private readonly TableCommandBuilder _builder;
 
 		/// <summary>
-		///     Initializes <see cref="_tableCommandBuilder" /> with specified parameters.
+		///     Initializes <see cref="_builder" /> with specified parameters.
 		/// </summary>
-		/// <param name="connectionString"> See <see cref="TableCommandBuilder" /> for details.</param>
-		/// <param name="dbProviderName"> See <see cref="TableCommandBuilder" /> constructor for details.</param>
-		/// <param name="tableName"> See <see cref="TableCommandBuilder.QuotedTableName" /> for details.</param>
+		/// <param name="connectionString"> See <see cref="Builder" /> for details.</param>
+		/// <param name="dbProviderName"> See <see cref="Builder" /> constructor for details.</param>
+		/// <param name="tableName"> See <see cref="RefinId.TableCommandBuilder.QuotedTableName" /> for details.</param>
 		public DbLongIdStorage(string connectionString, string dbProviderName, string tableName = null)
 		{
-			_tableCommandBuilder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
+			_builder = new TableCommandBuilder(connectionString, dbProviderName, tableName);
 		}
 
 		/// <summary>
-		///     Name of table with information about last identifiers and types.
+		///     <see cref="ILongIdStorage.Builder" /> implementation.
 		/// </summary>
-		public string TableName
+		public TableCommandBuilder Builder
 		{
-			get { return _tableCommandBuilder.QuotedTableName; }
+			get { return _builder; }
 		}
 
 		/// <summary>
@@ -38,7 +38,7 @@ namespace RefinId
 		/// </summary>
 		public List<long> GetLastValues(bool requestFromRealTables = false)
 		{
-			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
+			using (DbConnection connection = _builder.OpenConnection())
 			{
 				OnBeforeLoadValues(connection);
 
@@ -51,7 +51,7 @@ namespace RefinId
 		private List<long> SelectValuesFromConfiguration(DbConnection connection)
 		{
 			var result = new List<long>();
-			using (var command = _tableCommandBuilder.CreateSelectCommand(connection))
+			using (var command = _builder.CreateSelectCommand(connection))
 			{
 				using (var reader = command.ExecuteReader())
 				{
@@ -77,12 +77,11 @@ namespace RefinId
 		/// <summary>
 		///     <see cref="ILongIdStorage.SaveLastValues" /> implementation.
 		/// </summary>
-		public void SaveLastValues(IEnumerable<long> values,
-			bool removeUnusedRows = true)
+		public void SaveLastValues(IEnumerable<long> values, bool removeUnusedRows = true)
 		{
 			if (values == null) throw new ArgumentNullException("values");
 
-			using (DbConnection connection = _tableCommandBuilder.OpenConnection())
+			using (DbConnection connection = _builder.OpenConnection())
 			{
 				OnBeforeSaveValues(connection);
 				SaveToDatabase(values, connection, removeUnusedRows);
@@ -102,7 +101,7 @@ namespace RefinId
 		private List<long> SaveToDatabase(IEnumerable<long> values, DbConnection connection, bool removeUnusedRows)
 		{
 			// TODO: add/check filter for last value (assert that nobody updates storage without us), may be use SQL (instead of DataSet)
-			DbCommandBuilder commandBuilder = _tableCommandBuilder.InitializeCommandBuilderAndAdapter(connection);
+			DbCommandBuilder commandBuilder = _builder.InitializeCommandBuilderAndAdapter(connection);
 
 			var dataSet = new DataSet();
 			commandBuilder.DataAdapter.Fill(dataSet);
@@ -158,7 +157,10 @@ namespace RefinId
 					}
 					else
 					{
-						dbValues.Add(Convert.ToInt64(lastValueInTable));
+						LongId id = Convert.ToInt64(lastValueInTable);
+						if (id.Type != type) throw new InvalidOperationException(
+							string.Format("Table {0} has last id with type {1} instead of {2} (as configured).", tableName, id.Type, type));
+						dbValues.Add(id);
 					}
 				}
 			}
